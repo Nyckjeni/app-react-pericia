@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import BottomNavbar from '../components/BottomNavbar';
+import Odontograma from '../components/Odontograma';
+
 
 export default function CadastrarCaso({ navigation }) {
   const [casoId, setCasoId] = useState('');
@@ -26,6 +28,8 @@ export default function CadastrarCaso({ navigation }) {
   const [tipoCaso, setTipoCaso] = useState('');
   const [vitimaIdentificada, setVitimaIdentificada] = useState('');
   const [regioesLesionadas, setRegioesLesionadas] = useState({ cabeca: false, mandibula: false, dentes: false });
+  const [dentesMarcados, setDentesMarcados] = useState({});
+
 
   useEffect(() => {
     const gerarIdAleatorio = () => {
@@ -172,8 +176,12 @@ export default function CadastrarCaso({ navigation }) {
               <Picker.Item label="Físico" value="Fisico" />
               <Picker.Item label="Psicológico" value="Psicologico" />
               <Picker.Item label="Outro" value="Outro" />
+             
+
             </Picker>
           </View>
+
+           <Odontograma />
 
           <Text style={styles.label}>Vítima Identificada?*</Text>
           <View style={styles.pickerContainer}>
