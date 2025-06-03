@@ -1,4 +1,3 @@
-// components/Odontograma.js
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, TextInput, StyleSheet } from 'react-native';
 
@@ -9,20 +8,28 @@ const dentes = [
   '41', '42', '43', '44', '45', '46', '47', '48'
 ];
 
-export default function Odontograma() {
-  const [dentesMarcados, setDentesMarcados] = useState({});
+export default function Odontograma({ odontograma = {}, onChange }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [denteSelecionado, setDenteSelecionado] = useState('');
   const [observacao, setObservacao] = useState('');
 
+  // Abre modal e carrega observação do dente selecionado
   const abrirModal = (numero) => {
     setDenteSelecionado(numero);
-    setObservacao(dentesMarcados[numero] || '');
+    setObservacao(odontograma[numero] || '');
     setModalVisible(true);
   };
 
+  // Salva a observação e notifica o pai via onChange
   const salvarObservacao = () => {
-    setDentesMarcados({ ...dentesMarcados, [denteSelecionado]: observacao });
+    const novoOdontograma = { ...odontograma };
+    if (observacao.trim() === '') {
+      // Remove o dente se a observação for apagada
+      delete novoOdontograma[denteSelecionado];
+    } else {
+      novoOdontograma[denteSelecionado] = observacao.trim();
+    }
+    onChange && onChange(novoOdontograma);
     setModalVisible(false);
   };
 
@@ -31,13 +38,10 @@ export default function Odontograma() {
       {nums.map((numero) => (
         <TouchableOpacity
           key={numero}
-          style={[
-            styles.dente,
-            dentesMarcados[numero] ? styles.marcado : null
-          ]}
+          style={[styles.dente, odontograma[numero] ? styles.marcado : null]}
           onPress={() => abrirModal(numero)}
         >
-          <Text style={styles.denteText}>{numero}</Text>
+          <Text style={[styles.denteText, odontograma[numero] ? styles.denteTextMarcado : null]}>{numero}</Text>
         </TouchableOpacity>
       ))}
     </View>
@@ -65,6 +69,14 @@ export default function Odontograma() {
             <TouchableOpacity onPress={salvarObservacao} style={styles.modalButton}>
               <Text style={styles.modalButtonText}>Salvar</Text>
             </TouchableOpacity>
+
+            {/* Botão Cancelar */}
+            <TouchableOpacity
+              onPress={() => setModalVisible(false)}
+              style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]}
+            >
+              <Text style={{ color: '#000', fontWeight: 'bold' }}>Cancelar</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -80,7 +92,8 @@ const styles = StyleSheet.create({
     borderWidth: 1, justifyContent: 'center',
     alignItems: 'center', backgroundColor: '#fff'
   },
-  denteText: { fontSize: 14 },
+  denteText: { fontSize: 14, color: '#000' },
+  denteTextMarcado: { color: '#fff' },
   marcado: { backgroundColor: '#6B0D0D' },
   modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#00000099' },
   modal: { width: '80%', backgroundColor: '#fff', padding: 16, borderRadius: 8 },
