@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import BottomNavbar from '../components/BottomNavbar';
-import Odontograma from '../components/Odontograma';
+// import Odontograma from '../components/Odontograma'; // ← COMENTADO
 
 export default function CadastrarCaso({ navigation }) {
     const [casoId, setCasoId] = useState('');
@@ -30,7 +30,6 @@ export default function CadastrarCaso({ navigation }) {
         dentes: false,
     });
 
-    // Cada vítima agora tem um odontograma próprio
     const [vitimas, setVitimas] = useState([
         {
             id: Date.now(),
@@ -43,7 +42,7 @@ export default function CadastrarCaso({ navigation }) {
             contato: '',
             endereco: '',
             corEtnia: '',
-            odontograma: {}, // objeto para armazenar os dentes marcados e observações
+            // odontograma: {}, // ← COMENTADO
         },
     ]);
 
@@ -69,7 +68,7 @@ export default function CadastrarCaso({ navigation }) {
                 contato: '',
                 endereco: '',
                 corEtnia: '',
-                odontograma: {},
+                // odontograma: {}, // ← COMENTADO
             },
         ]);
     };
@@ -84,15 +83,7 @@ export default function CadastrarCaso({ navigation }) {
         );
     };
 
-    // Atualiza o odontograma de uma vítima específica
-    const atualizarOdontograma = (id, novoOdontograma) => {
-        setVitimas((prev) =>
-            prev.map((v) => (v.id === id ? { ...v, odontograma: novoOdontograma } : v))
-        );
-    };
-
     const handleSubmit = () => {
-        // Validação simples
         if (
             !descricao.trim() ||
             vitimas.some(
@@ -130,7 +121,6 @@ export default function CadastrarCaso({ navigation }) {
 
         console.log('Caso cadastrado:', dadosCaso);
         Alert.alert('Sucesso', 'Caso cadastrado com sucesso!');
-        // Resetar campos após salvar
         setDescricao('');
         setVitimas([]);
     };
@@ -138,16 +128,7 @@ export default function CadastrarCaso({ navigation }) {
     return (
         <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
             <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 120 }}>
-                <Text
-                    style={{
-                        fontSize: 24,
-                        fontWeight: 'bold',
-                        color: '#6B0D0D',
-                        marginBottom: 16,
-                    }}
-                >
-                    Cadastrar Novo Caso
-                </Text>
+                <Text style={styles.header}>Cadastrar Novo Caso</Text>
 
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>Informações do Caso</Text>
@@ -180,8 +161,6 @@ export default function CadastrarCaso({ navigation }) {
                     />
                 </View>
 
-
-                {/* Renderiza vítimas com odontograma individual */}
                 {vitimas.map((vitima, index) => (
                     <View key={vitima.id} style={styles.card}>
                         <Text style={styles.sectionTitle}>Vítima {index + 1}</Text>
@@ -261,137 +240,23 @@ export default function CadastrarCaso({ navigation }) {
                             onChangeText={(val) => atualizarVitima(vitima.id, 'corEtnia', val)}
                         />
 
-                        {/* Odontograma individual */}
-                        <Text style={[styles.sectionTitle, { marginTop: 16 }]}>
-                            Odontograma
-                        </Text>
-                        <Odontograma
-                            odontograma={vitima.odontograma}
-                            onChange={(novoOdontograma) =>
-                                atualizarOdontograma(vitima.id, novoOdontograma)
-                            }
-                        />
-
                         {vitimas.length > 1 && (
                             <TouchableOpacity
                                 onPress={() => removerVitima(vitima.id)}
-                                style={{
-                                    marginTop: 12,
-                                    backgroundColor: '#ffe6e6',
-                                    padding: 10,
-                                    borderRadius: 8,
-                                    alignItems: 'center',
-                                    borderWidth: 1,
-                                    borderColor: 'red',
-                                }}
+                                style={[styles.button, { backgroundColor: '#B00020' }]}
                             >
-                                <Text style={{ color: 'red', fontWeight: 'bold' }}>
-                                    Remover Vítima
-                                </Text>
+                                <Text style={styles.buttonText}>Remover Vítima</Text>
                             </TouchableOpacity>
                         )}
                     </View>
                 ))}
 
-                <TouchableOpacity
-                    onPress={adicionarVitima}
-                    style={{
-                        marginBottom: 20,
-                        backgroundColor: '#6B0D0D',
-                        padding: 12,
-                        borderRadius: 8,
-                        alignItems: 'center',
-                    }}
-                >
-                    <Text
-                        style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}
-                    >
-                        Adicionar Nova Vítima
-                    </Text>
+                <TouchableOpacity onPress={adicionarVitima} style={styles.button}>
+                    <Text style={styles.buttonText}>Adicionar Vítima</Text>
                 </TouchableOpacity>
 
-                <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>Local do Incidente</Text>
-                    <Text style={styles.label}>Estado*</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={estado}
-                        onChangeText={setEstado}
-                    />
-
-                    <Text style={styles.label}>Município*</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={municipio}
-                        onChangeText={setMunicipio}
-                    />
-
-                    <Text style={styles.label}>Data do Incidente*</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={dataIncidente}
-                        onChangeText={setDataIncidente}
-                        placeholder="DD/MM/AAAA"
-                    />
-
-                    <Text style={styles.label}>Local Exato</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={localIncidente}
-                        onChangeText={setLocalIncidente}
-                    />
-
-                    <Text style={styles.label}>Descrição do Incidente</Text>
-                    <TextInput
-                        multiline
-                        numberOfLines={4}
-                        style={styles.textArea}
-                        value={descricaoIncidente}
-                        onChangeText={setDescricaoIncidente}
-                    />
-
-                    <Text style={styles.label}>Instrumento Utilizado</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={instrumento}
-                        onChangeText={setInstrumento}
-                    />
-
-                    <Text style={styles.label}>Tipo do Caso</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={tipoCaso}
-                        onChangeText={setTipoCaso}
-                    />
-
-                    <Text style={styles.label}>Vítima Identificada?</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={vitimaIdentificada}
-                        onChangeText={setVitimaIdentificada}
-                        placeholder="Sim/Não"
-                    />
-                </View>
-
-                <TouchableOpacity
-                    onPress={handleSubmit}
-                    style={{
-                        backgroundColor: '#6B0D0D',
-                        padding: 14,
-                        borderRadius: 10,
-                        alignItems: 'center',
-                        marginTop: 20,
-                    }}
-                >
-                    <Text
-                        style={{
-                            color: '#fff',
-                            fontWeight: 'bold',
-                            fontSize: 18,
-                        }}
-                    >
-                        Salvar Caso
-                    </Text>
+                <TouchableOpacity onPress={handleSubmit} style={styles.button}>
+                    <Text style={styles.buttonText}>Cadastrar Caso</Text>
                 </TouchableOpacity>
             </ScrollView>
 
@@ -401,71 +266,83 @@ export default function CadastrarCaso({ navigation }) {
 }
 
 const styles = {
-    card: {
-        backgroundColor: 'white',
-        borderRadius: 10,
-        padding: 16,
+    header: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#6B0D0D',
         marginBottom: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 2,
     },
     sectionTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        marginBottom: 12,
-        color: '#6B0D0D',
+        marginBottom: 8,
+        color: '#333',
     },
     label: {
         fontWeight: 'bold',
-        marginBottom: 6,
-        color: '#333',
+        marginTop: 12,
     },
     input: {
         borderWidth: 1,
         borderColor: '#ccc',
-        borderRadius: 6,
+        borderRadius: 5,
         padding: 8,
-        marginBottom: 12,
-        backgroundColor: '#fff',
+        marginTop: 4,
+        backgroundColor: 'white',
     },
     inputDisabled: {
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 6,
-        padding: 8,
-        marginBottom: 8,
         backgroundColor: '#eee',
-        color: '#999',
-    },
-    textArea: {
         borderWidth: 1,
         borderColor: '#ccc',
-        borderRadius: 6,
+        borderRadius: 5,
         padding: 8,
-        marginBottom: 12,
-        backgroundColor: '#fff',
-        textAlignVertical: 'top',
+        marginTop: 4,
     },
     pickerContainer: {
         borderWidth: 1,
         borderColor: '#ccc',
-        borderRadius: 6,
-        marginBottom: 12,
-        backgroundColor: '#fff',
-        height: 50, // Altura aumentada para evitar corte
-        justifyContent: 'center', // Centraliza verticalmente
+        borderRadius: 5,
+        marginTop: 4,
+        backgroundColor: 'white',
         overflow: 'hidden',
     },
     picker: {
-        height: 50, // Altura para o Picker igual ao container
+        height: 50,
         width: '100%',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        color: '#000',
+    },
+    textArea: {
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 5,
+        padding: 8,
+        marginTop: 4,
+        backgroundColor: 'white',
+        textAlignVertical: 'top',
+    },
+    button: {
+        backgroundColor: '#6B0D0D',
+        padding: 12,
+        borderRadius: 5,
+        alignItems: 'center',
+        marginTop: 16,
+    },
+    buttonText: {
+        color: 'white',
+        fontWeight: 'bold',
     },
     info: {
         fontSize: 12,
         color: '#666',
-        marginBottom: 12,
+        marginBottom: 8,
+    },
+    card: {
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        padding: 16,
+        marginBottom: 16,
+        elevation: 2,
     },
 };

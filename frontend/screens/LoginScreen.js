@@ -1,8 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen() {
   const navigation = useNavigation();
@@ -12,24 +22,52 @@ export default function LoginScreen() {
   const [itens] = useState([
     { label: 'Administrador', value: 'admin' },
     { label: 'Perito', value: 'perito' },
-    { label: 'Assistente', value: 'Assistente' },
+    { label: 'Assistente', value: 'assistente' },
   ]);
 
   const [matricula, setMatricula] = useState('');
   const [senha, setSenha] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    // Navega para a tela 'Casos' dentro do navigator 'Main'
-    navigation.navigate('Main', { screen: 'Casos' });
+  const handleLogin = async () => {
+    if (!cargo || !matricula || !senha) {
+      Alert.alert('Erro', 'Preencha todos os campos!');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch('http://192.168.0.124:3000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ matricula, senha }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.accessToken) {
+        // Salva tokens (opcional)
+        await AsyncStorage.setItem('accessToken', data.accessToken);
+        await AsyncStorage.setItem('refreshToken', data.refreshToken);
+
+        // Redireciona
+        navigation.navigate('Main', { screen: 'Casos' });
+      } else {
+        Alert.alert('Login falhou', data.msg || 'Usuário ou senha incorretos');
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível conectar ao servidor');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <View style={styles.container}>
-      <Image
-        source={require('../assets/tooth.png')} 
-        style={styles.logo}
-      />
+      <Image source={require('../assets/tooth.png')} style={styles.logo} />
 
       <Text style={styles.title}></Text>
 
@@ -57,6 +95,7 @@ export default function LoginScreen() {
         value={matricula}
         onChangeText={setMatricula}
         placeholderTextColor="#999"
+        autoCapitalize="none"
       />
 
       <Text style={styles.label}>Senha</Text>
@@ -68,14 +107,19 @@ export default function LoginScreen() {
           value={senha}
           onChangeText={setSenha}
           placeholderTextColor="#999"
+          autoCapitalize="none"
         />
         <TouchableOpacity onPress={() => setMostrarSenha(!mostrarSenha)}>
-          <Ionicons name={mostrarSenha ? "eye-off" : "eye"} size={22} color="#999" />
+          <Ionicons name={mostrarSenha ? 'eye-off' : 'eye'} size={22} color="#999" />
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.botao} onPress={handleLogin}>
-        <Text style={styles.botaoTexto}>Entrar</Text>
+      <TouchableOpacity style={styles.botao} onPress={handleLogin} disabled={loading}>
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.botaoTexto}>Entrar</Text>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -150,6 +194,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
     elevation: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   botaoTexto: {
     color: '#fff',
