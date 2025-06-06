@@ -9,6 +9,7 @@ import CadastrarCaso from './screens/CadastrarCaso';
 import UsuariosScreen from './screens/UsuariosScreen';
 import CasosScreen from './screens/CasosScreen';
 import DashboardScreen from './screens/DashboardScreen';
+import DetalhesCasoScreen from './screens/DetalhesCasoScreen'; // já estava incluso
 
 const Stack = createNativeStackNavigator();
 
@@ -23,6 +24,11 @@ export default function App() {
           <Stack.Screen name="Usuarios" component={UsuariosScreen} />
           <Stack.Screen name="Casos" component={CasosScreen} />
           <Stack.Screen name="Dashboard" component={DashboardScreen} />
+          <Stack.Screen
+            name="DetalhesCaso"
+            component={DetalhesCasoScreen}
+            options={{ headerShown: true, title: 'Detalhes do Caso' }} // Exibe o header com título
+          />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

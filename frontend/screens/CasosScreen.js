@@ -68,29 +68,32 @@ const statusTextStyle = (status) => {
 
 export default function CasosScreen({ navigation }) {
   const renderItem = ({ item }) => (
-    <View style={styles.card}>
-      <View style={styles.header}>
-        <Text style={styles.id}>#{item.id}</Text>
-        <Text style={styles.title}>{item.titulo}</Text>
-      </View>
-      <Text style={styles.description}>{item.descricao}</Text>
-      <View style={styles.meta}>
-        <View style={styles.metaItem}>
-          <Ionicons name="calendar-outline" size={16} color="#555" />
-          <Text style={styles.metaText}>{item.data}</Text>
+    <TouchableOpacity onPress={() => navigation.navigate('DetalhesCaso', { caso: item })}>
+      <View style={styles.card}>
+        <View style={styles.header}>
+          <Text style={styles.id}>#{item.id}</Text>
+          <Text style={styles.title}>{item.titulo}</Text>
         </View>
-        <View style={styles.metaItem}>
-          <Ionicons name="person-outline" size={16} color="#555" />
-          <Text style={styles.metaText}>{item.responsavel}</Text>
+        <Text style={styles.description}>{item.descricao}</Text>
+        <View style={styles.meta}>
+          <View style={styles.metaItem}>
+            <Ionicons name="calendar-outline" size={16} color="#555" />
+            <Text style={styles.metaText}>{item.data}</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <Ionicons name="person-outline" size={16} color="#555" />
+            <Text style={styles.metaText}>{item.responsavel}</Text>
+          </View>
+        </View>
+        <View style={[styles.status, statusStyle(item.status)]}>
+          <Text style={[styles.statusText, statusTextStyle(item.status)]}>
+            {item.status}
+          </Text>
         </View>
       </View>
-      <View style={[styles.status, statusStyle(item.status)]}>
-        <Text style={[styles.statusText, statusTextStyle(item.status)]}>
-          {item.status}
-        </Text>
-      </View>
-    </View>
+    </TouchableOpacity>
   );
+
 
   return (
     <>
