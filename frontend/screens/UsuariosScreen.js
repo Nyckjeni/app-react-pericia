@@ -66,10 +66,13 @@ export default function UsuariosScreen({ navigation }) {
       <View style={{ flex: 1 }}>
         <View style={styles.container}>
           <Text style={styles.pageTitle}>Gerenciamento de Usuários</Text>
-
-          <TouchableOpacity style={styles.novoUsuarioButton} onPress={() => navigation.navigate('CadastrarUsuario')}>
+          <TouchableOpacity
+            style={styles.novoUsuarioButton}
+            onPress={() => navigation.navigate('CadastrarUsuario')}
+          >
             <Text style={styles.novoUsuarioButtonText}>Cadastrar Novo Usuário</Text>
           </TouchableOpacity>
+
 
 
           <View style={styles.searchContainer}>

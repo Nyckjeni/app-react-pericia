@@ -9,7 +9,8 @@ import CadastrarCaso from './screens/CadastrarCaso';
 import UsuariosScreen from './screens/UsuariosScreen';
 import CasosScreen from './screens/CasosScreen';
 import DashboardScreen from './screens/DashboardScreen';
-import DetalhesCasoScreen from './screens/DetalhesCasoScreen'; // já estava incluso
+import DetalhesCasoScreen from './screens/DetalhesCasoScreen';
+import CadastrarUsuario from './screens/CadastrarUsuario'; // ✅ IMPORTADO
 
 const Stack = createNativeStackNavigator();
 
@@ -27,7 +28,12 @@ export default function App() {
           <Stack.Screen
             name="DetalhesCaso"
             component={DetalhesCasoScreen}
-            options={{ headerShown: true, title: 'Detalhes do Caso' }} // Exibe o header com título
+            options={{ headerShown: true, title: 'Detalhes do Caso' }}
+          />
+          <Stack.Screen
+            name="CadastrarUsuario"
+            component={CadastrarUsuario}
+            options={{ headerShown: true, title: 'Novo Usuário' }} // ✅ TELA ADICIONADA
           />
         </Stack.Navigator>
       </NavigationContainer>
