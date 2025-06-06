@@ -24,7 +24,9 @@ export default function CadastrarCaso({ navigation }) {
   const [descricaoIncidente, setDescricaoIncidente] = useState('');
   const [instrumento, setInstrumento] = useState('');
   const [tipoCaso, setTipoCaso] = useState('');
-  const [mostrarCalendario, setMostrarCalendario] = useState(false);
+
+
+
   const [vitimaIdentificada, setVitimaIdentificada] = useState('');
   const [regioesLesionadas, setRegioesLesionadas] = useState({
     cabeca: false,
@@ -35,15 +37,12 @@ export default function CadastrarCaso({ navigation }) {
   const [vitimas, setVitimas] = useState([
     {
       id: Date.now(),
-      nic: '',
       nome: '',
       dataNascimento: '',
-      idade: '',
       genero: '',
       documento: '',
       contato: '',
-      endereco: '',
-      corEtnia: '',
+
     },
   ]);
 
@@ -60,15 +59,13 @@ export default function CadastrarCaso({ navigation }) {
       ...prev,
       {
         id: Date.now(),
-        nic: '',
+
         nome: '',
         dataNascimento: '',
-        idade: '',
         genero: '',
         documento: '',
         contato: '',
-        endereco: '',
-        corEtnia: '',
+
       },
     ]);
   };
@@ -89,11 +86,10 @@ export default function CadastrarCaso({ navigation }) {
       vitimas.some(
         (v) =>
           !v.nome ||
-          !v.idade ||
+
           !v.documento ||
-          !v.nic ||
-          !v.endereco ||
-          !v.corEtnia
+
+          !v.endereco
       )
     ) {
       Alert.alert(
@@ -191,12 +187,6 @@ export default function CadastrarCaso({ navigation }) {
           <View key={vitima.id} style={styles.card}>
             <Text style={styles.sectionTitle}>Informações da Vítima {index + 1}</Text>
 
-            <Text style={styles.label}>NIC*</Text>
-            <TextInput
-              style={styles.input}
-              value={vitima.nic}
-              onChangeText={(val) => atualizarVitima(vitima.id, 'nic', val)}
-            />
 
             <Text style={styles.label}>Nome*</Text>
             <TextInput
@@ -214,13 +204,7 @@ export default function CadastrarCaso({ navigation }) {
               }
             />
 
-            <Text style={styles.label}>Idade*</Text>
-            <TextInput
-              style={styles.input}
-              keyboardType="numeric"
-              value={vitima.idade}
-              onChangeText={(val) => atualizarVitima(vitima.id, 'idade', val)}
-            />
+
 
             <Text style={styles.label}>Gênero</Text>
             <View style={styles.pickerContainer}>
@@ -238,7 +222,7 @@ export default function CadastrarCaso({ navigation }) {
               </Picker>
             </View>
 
-            <Text style={styles.label}>Documento*</Text>
+            <Text style={styles.label}>Documento de Identidade*</Text>
             <TextInput
               style={styles.input}
               value={vitima.documento}
@@ -252,19 +236,7 @@ export default function CadastrarCaso({ navigation }) {
               onChangeText={(val) => atualizarVitima(vitima.id, 'contato', val)}
             />
 
-            <Text style={styles.label}>Endereço*</Text>
-            <TextInput
-              style={styles.input}
-              value={vitima.endereco}
-              onChangeText={(val) => atualizarVitima(vitima.id, 'endereco', val)}
-            />
 
-            <Text style={styles.label}>Cor/Etnia*</Text>
-            <TextInput
-              style={styles.input}
-              value={vitima.corEtnia}
-              onChangeText={(val) => atualizarVitima(vitima.id, 'corEtnia', val)}
-            />
 
             {vitimas.length > 1 && (
               <TouchableOpacity
@@ -300,7 +272,50 @@ export default function CadastrarCaso({ navigation }) {
           />
         </View>
 
-       
+
+        {/* Informações do Incidente */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Informações do Incidente</Text>
+
+          {/* Data do Incidente */}
+          <Text style={styles.label}>Data do Incidente*</Text>
+          <TextInput
+            value={dataIncidente}
+            onChangeText={setDataIncidente}
+            placeholder="Ex: 10/05/2024"
+            style={styles.input}
+          />
+
+          {/* Local do Incidente */}
+          <Text style={styles.label}>Local do Incidente*</Text>
+          <TextInput
+            value={localIncidente}
+            onChangeText={setLocalIncidente}
+            placeholder="Ex: Rua das Flores, nº 123"
+            style={styles.input}
+          />
+
+          {/* Descrição do Incidente */}
+          <Text style={styles.label}>Descrição do Incidente*</Text>
+          <TextInput
+            multiline
+            numberOfLines={5}
+            value={descricao}
+            onChangeText={setDescricao}
+            placeholder="Descreva o Incidente..."
+            style={styles.textArea}
+          />
+
+          {/* Instrumento ou Arma */}
+          <Text style={styles.label}>Instrumento ou Arma (opcional)</Text>
+          <TextInput
+            value={instrumento}
+            onChangeText={setInstrumento}
+            placeholder="Ex: faca, arma de fogo, etc."
+            style={styles.input}
+          />
+        </View>
+
 
 
         {/* Nova seção: Classificação */}
