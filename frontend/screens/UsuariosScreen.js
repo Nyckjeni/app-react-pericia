@@ -1,17 +1,14 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DropDownPicker from 'react-native-dropdown-picker';
 import BottomNavbar from '../components/BottomNavbar';
-
-const usuarios = [
-  { id: '1', nome: 'Admin master', email: 'admin@gmail.com', matricula: 'N/A', acesso: 'Nunca acessou', tipo: 'Administrador' },
-  { id: '2', nome: 'João Carlos', email: 'joaocarlos@gmail.com', matricula: 'MAT1744938124209', acesso: 'Nunca acessou', tipo: 'Perito' },
-  { id: '3', nome: 'Edmar', email: 'edmarsantos@gmail.com', matricula: 'MAT1745247639297', acesso: 'Nunca acessou', tipo: 'Perito' },
-  { id: '4', nome: 'William', email: 'williamandre@gmail.com', matricula: 'MAT1745765500820', acesso: 'Nunca acessou', tipo: 'Assistente' },
-];
+import axios from 'axios';
 
 export default function UsuariosScreen({ navigation }) {
+  const [usuarios, setUsuarios] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const [openTipo, setOpenTipo] = useState(false);
   const [tipoFiltro, setTipoFiltro] = useState('Todos');
   const [tipos] = useState([
@@ -28,12 +25,27 @@ export default function UsuariosScreen({ navigation }) {
     { label: 'Mais antigos', value: 'Mais antigos' },
   ]);
 
+  useEffect(() => {
+    const fetchUsuarios = async () => {
+      try {
+        const response = await axios.get('http://192.168.0.124:3000/api/users'); // Troque pela URL correta da sua API
+        setUsuarios(response.data);
+      } catch (error) {
+        console.error('Erro ao buscar usuários:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsuarios();
+  }, []);
+
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       <Text style={styles.name}>{item.nome}</Text>
       <Text><Text style={styles.bold}>Email:</Text> {item.email}</Text>
-      <Text><Text style={styles.bold}>Matrícula:</Text> {item.matricula}</Text>
-      <Text><Text style={styles.bold}>Cadastrado em:</Text> {item.acesso}</Text>
+      <Text><Text style={styles.bold}>Matrícula:</Text> {item.matricula || 'N/A'}</Text>
+      <Text><Text style={styles.bold}>Cadastrado em:</Text> {item.acesso || 'Nunca acessou'}</Text>
       <View style={styles.badgeContainer}>
         <Text style={[styles.badge, item.tipo === 'Administrador' ? styles.adminBadge : styles.peritoBadge]}>
           {item.tipo}
@@ -45,8 +57,8 @@ export default function UsuariosScreen({ navigation }) {
   const usuariosFiltrados = usuarios
     .filter((usuario) => tipoFiltro === 'Todos' || usuario.tipo === tipoFiltro)
     .sort((a, b) => {
-      if (ordenarPor === 'Mais recentes') return b.id - a.id;
-      return a.id - b.id;
+      if (ordenarPor === 'Mais recentes') return new Date(b.createdAt) - new Date(a.createdAt);
+      return new Date(a.createdAt) - new Date(b.createdAt);
     });
 
   return (
@@ -54,6 +66,11 @@ export default function UsuariosScreen({ navigation }) {
       <View style={{ flex: 1 }}>
         <View style={styles.container}>
           <Text style={styles.pageTitle}>Gerenciamento de Usuários</Text>
+
+          <TouchableOpacity style={styles.novoUsuarioButton} onPress={() => navigation.navigate('CadastrarUsuario')}>
+            <Text style={styles.novoUsuarioButtonText}>Cadastrar Novo Usuário</Text>
+          </TouchableOpacity>
+
 
           <View style={styles.searchContainer}>
             <TextInput
@@ -73,39 +90,42 @@ export default function UsuariosScreen({ navigation }) {
               items={tipos}
               setOpen={setOpenTipo}
               setValue={setTipoFiltro}
-              setItems={() => {}}
+              setItems={() => { }}
               containerStyle={{ width: '48%' }}
               zIndex={3000}
               zIndexInverse={1000}
             />
-
             <DropDownPicker
               open={openOrdenar}
               value={ordenarPor}
               items={ordens}
               setOpen={setOpenOrdenar}
               setValue={setOrdenarPor}
-              setItems={() => {}}
+              setItems={() => { }}
               containerStyle={{ width: '48%' }}
               zIndex={2000}
               zIndexInverse={2000}
             />
           </View>
 
-          <FlatList
-            data={usuariosFiltrados}
-            keyExtractor={(item) => item.id}
-            renderItem={renderItem}
-            contentContainerStyle={{ paddingBottom: 100 }}
-          />
+          {loading ? (
+            <ActivityIndicator size="large" color="#6B0D0D" />
+          ) : (
+            <FlatList
+              data={usuariosFiltrados}
+              keyExtractor={(item) => item._id}
+              renderItem={renderItem}
+              contentContainerStyle={{ paddingBottom: 100 }}
+            />
+          )}
         </View>
       </View>
 
       <BottomNavbar
-              navigation={navigation}
-              activeRoute="Usuarios"
-              onAddPress={() => navigation.navigate('CadastrarCaso')}
-            />
+        navigation={navigation}
+        activeRoute="Usuarios"
+        onAddPress={() => navigation.navigate('CadastrarCaso')}
+      />
     </>
   );
 }
@@ -186,4 +206,19 @@ const styles = StyleSheet.create({
     borderColor: '#0d6efd',
     color: '#0d6efd',
   },
+  novoUsuarioButton: {
+    backgroundColor: '#6B0D0D',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+
+  novoUsuarioButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+
 });

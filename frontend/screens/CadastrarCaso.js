@@ -87,9 +87,7 @@ export default function CadastrarCaso({ navigation }) {
         (v) =>
           !v.nome ||
 
-          !v.documento ||
-
-          !v.endereco
+          !v.documento
       )
     ) {
       Alert.alert(
@@ -120,25 +118,24 @@ export default function CadastrarCaso({ navigation }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // <- ESSENCIAL
         },
-        body: JSON.stringify(dadosCaso),
+        body: JSON.stringify(formData)
       });
-
       if (response.ok) {
         Alert.alert('Sucesso', 'Caso cadastrado com sucesso!');
         setDescricao('');
         setVitimas([
           {
             id: Date.now(),
-            nic: '',
+
             nome: '',
             dataNascimento: '',
-            idade: '',
+
             genero: '',
             documento: '',
             contato: '',
-            endereco: '',
-            corEtnia: '',
+
           },
         ]);
       } else {

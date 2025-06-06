@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,39 +6,10 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import BottomNavbar from '../components/BottomNavbar'; // importe a BottomNavbar
-
-const casos = [
-  {
-    id: 'caso-001',
-    titulo: 'Identificação da vítima em um acidente rodoviário',
-    descricao:
-      'Vítima do sexo masculino de aproximadamente 30 anos, com fraturas dentárias caracterís...',
-    data: '10/5/2024',
-    responsavel: 'dr.silva',
-    status: 'Em Andamento',
-  },
-  {
-    id: 'caso-002',
-    titulo: 'Identificação da vítima em um acidente rodoviário',
-    descricao:
-      'Vítima do sexo masculino de aproximadamente 30 anos, com fraturas dentárias caracterís...',
-    data: '10/5/2024',
-    responsavel: 'dr.silva',
-    status: 'Arquivado',
-  },
-  {
-    id: 'caso-003',
-    titulo: 'Identificação da vítima em um acidente rodoviário',
-    descricao:
-      'Vítima do sexo masculino de aproximadamente 30 anos, com fraturas dentárias caracterís...',
-    data: '10/5/2024',
-    responsavel: 'dr.silva',
-    status: 'Finalizado',
-  },
-];
+import BottomNavbar from '../components/BottomNavbar';
 
 const statusStyle = (status) => {
   switch (status) {
@@ -67,6 +38,24 @@ const statusTextStyle = (status) => {
 };
 
 export default function CasosScreen({ navigation }) {
+  const [casos, setCasos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState(null);
+
+  useEffect(() => {
+    fetch('http://192.168.0.124:3000/api/cases')
+      .then((res) => res.json())
+      .then((data) => {
+        setCasos(data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Erro ao buscar casos:', error);
+        setErro('Erro ao carregar os casos.');
+        setLoading(false);
+      });
+  }, []);
+
   const renderItem = ({ item }) => (
     <TouchableOpacity onPress={() => navigation.navigate('DetalhesCaso', { caso: item })}>
       <View style={styles.card}>
@@ -94,7 +83,6 @@ export default function CasosScreen({ navigation }) {
     </TouchableOpacity>
   );
 
-
   return (
     <>
       <View style={styles.container}>
@@ -111,12 +99,18 @@ export default function CasosScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        <FlatList
-          data={casos}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: 140 }} // espaço para a navbar
-        />
+        {loading ? (
+          <ActivityIndicator size="large" color="#6B0D0D" />
+        ) : erro ? (
+          <Text style={{ color: 'red' }}>{erro}</Text>
+        ) : (
+          <FlatList
+            data={casos}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ paddingBottom: 140 }}
+          />
+        )}
       </View>
 
       <BottomNavbar
@@ -131,14 +125,14 @@ export default function CasosScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5', // Igual ao primeiro código
-    paddingTop: 40, // Igual ao primeiro código
-    paddingHorizontal: 16, // Margem lateral igual ao primeiro código
+    backgroundColor: '#f5f5f5',
+    paddingTop: 40,
+    paddingHorizontal: 16,
   },
   pageTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#6B0D0D', // Cor do título igual ao primeiro código
+    color: '#6B0D0D',
     marginTop: 16,
     marginBottom: 12,
   },
