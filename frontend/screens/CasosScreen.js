@@ -112,11 +112,10 @@ export default function CasosScreen({ navigation }) {
           data={casos}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: 140 }}
+          contentContainerStyle={{ paddingBottom: 140 }} // espaço para a navbar
         />
       </View>
 
-      {/* Navbar fora do container */}
       <BottomNavbar
         navigation={navigation}
         activeRoute="Casos"

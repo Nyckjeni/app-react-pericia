@@ -50,62 +50,63 @@ export default function UsuariosScreen({ navigation }) {
     });
 
   return (
-    <View style={{ flex: 1 }}>
-      <View style={styles.container}>
-        {/* Título igual do outro código */}
-        <Text style={styles.pageTitle}>Gerenciamento de Usuários</Text>
+    <>
+      <View style={{ flex: 1 }}>
+        <View style={styles.container}>
+          <Text style={styles.pageTitle}>Gerenciamento de Usuários</Text>
 
-        {/* Campo de busca + botão iguais ao do outro código */}
-        <View style={styles.searchContainer}>
-          <TextInput
-            placeholder="Buscar por matrícula ou nome..."
-            placeholderTextColor="#999"
-            style={styles.searchInput}
+          <View style={styles.searchContainer}>
+            <TextInput
+              placeholder="Buscar por matrícula ou nome..."
+              placeholderTextColor="#999"
+              style={styles.searchInput}
+            />
+            <TouchableOpacity style={styles.searchButton}>
+              <Ionicons name="search" size={20} color="#6B0D0D" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.dropdownRow}>
+            <DropDownPicker
+              open={openTipo}
+              value={tipoFiltro}
+              items={tipos}
+              setOpen={setOpenTipo}
+              setValue={setTipoFiltro}
+              setItems={() => {}}
+              containerStyle={{ width: '48%' }}
+              zIndex={3000}
+              zIndexInverse={1000}
+            />
+
+            <DropDownPicker
+              open={openOrdenar}
+              value={ordenarPor}
+              items={ordens}
+              setOpen={setOpenOrdenar}
+              setValue={setOrdenarPor}
+              setItems={() => {}}
+              containerStyle={{ width: '48%' }}
+              zIndex={2000}
+              zIndexInverse={2000}
+            />
+          </View>
+
+          <FlatList
+            data={usuariosFiltrados}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            contentContainerStyle={{ paddingBottom: 100 }}
           />
-          <TouchableOpacity style={styles.searchButton}>
-            <Ionicons name="search" size={20} color="#6B0D0D" />
-          </TouchableOpacity>
         </View>
-
-        {/* Filtros em dropdown */}
-        <View style={styles.dropdownRow}>
-          <DropDownPicker
-            open={openTipo}
-            value={tipoFiltro}
-            items={tipos}
-            setOpen={setOpenTipo}
-            setValue={setTipoFiltro}
-            setItems={() => {}}
-            placeholder="Filtrar por tipo"
-            containerStyle={{ width: '48%' }}
-            zIndex={3000}
-            zIndexInverse={1000}
-          />
-
-          <DropDownPicker
-            open={openOrdenar}
-            value={ordenarPor}
-            items={ordens}
-            setOpen={setOpenOrdenar}
-            setValue={setOrdenarPor}
-            setItems={() => {}}
-            placeholder="Ordenar por"
-            containerStyle={{ width: '48%' }}
-            zIndex={2000}
-            zIndexInverse={2000}
-          />
-        </View>
-
-        <FlatList
-          data={usuariosFiltrados}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={{ paddingBottom: 100 }}
-        />
       </View>
 
-      <BottomNavbar navigation={navigation} activeRoute="Usuarios" />
-    </View>
+      <BottomNavbar
+              navigation={navigation}
+              activeRoute="Usuarios"
+              onAddPress={() => navigation.navigate('CadastrarCaso')}
+            />
+    </>
   );
 }
 

@@ -8,6 +8,7 @@ import MainTabs from './navigation/MainTabs';
 import CadastrarCaso from './screens/CadastrarCaso';
 import UsuariosScreen from './screens/UsuariosScreen';
 import CasosScreen from './screens/CasosScreen';
+import DashboardScreen from './screens/DashboardScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -21,6 +22,7 @@ export default function App() {
           <Stack.Screen name="CadastrarCaso" component={CadastrarCaso} />
           <Stack.Screen name="Usuarios" component={UsuariosScreen} />
           <Stack.Screen name="Casos" component={CasosScreen} />
+          <Stack.Screen name="Dashboard" component={DashboardScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

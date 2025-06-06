@@ -1,7 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import Dashboard from '../screens/Dashboard';
+import Dashboard from '../screens/DashboardScreen';
 import CasosScreen from '../screens/CasosScreen';
 import UsuariosScreen from '../screens/UsuariosScreen';
 import BottomNavbar from '../components/BottomNavbar';
