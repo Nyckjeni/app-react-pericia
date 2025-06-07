@@ -42,8 +42,41 @@ export default function CasosScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
 
-  useEffect(() => {
-    fetch('http://192.168.0.124:3000/api/cases')
+  const modoTeste = true;
+
+useEffect(() => {
+  if (modoTeste) {
+    const exemplos = [ 
+
+       {
+      id: '001',
+      titulo: 'Caso de Roubo',
+      descricao: 'Relato de roubo em residência no bairro Central.',
+      data: '2025-06-01',
+      responsavel: 'João Silva',
+      status: 'Em Andamento',
+    },
+    {
+      id: '002',
+      titulo: 'Acidente de Trânsito',
+      descricao: 'Acidente envolvendo dois veículos na Avenida Brasil.',
+      data: '2025-05-25',
+      responsavel: 'Maria Oliveira',
+      status: 'Arquivado',
+    },
+    {
+      id: '003',
+      titulo: 'Investigação de Homicídio',
+      descricao: 'Caso em investigação no bairro Sul.',
+      data: '2025-05-15',
+      responsavel: 'Carlos Pereira',
+      status: 'Finalizado',
+    },
+     ];
+    setCasos(exemplos);
+    setLoading(false);
+  } else {
+    fetch('http://192.168.0.125:3000/api/cases')
       .then((res) => res.json())
       .then((data) => {
         setCasos(data);
@@ -54,7 +87,8 @@ export default function CasosScreen({ navigation }) {
         setErro('Erro ao carregar os casos.');
         setLoading(false);
       });
-  }, []);
+  }
+}, []);
 
   const renderItem = ({ item }) => (
     <TouchableOpacity onPress={() => navigation.navigate('DetalhesCaso', { caso: item })}>
