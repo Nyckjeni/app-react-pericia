@@ -6,7 +6,7 @@ import BottomNavbar from '../components/BottomNavbar';
 import axios from 'axios';
 
 export default function UsuariosScreen({ navigation }) {
-  const [usuarios, setUsuarios] = useState([]);
+  
   const [loading, setLoading] = useState(true);
 
   const [openTipo, setOpenTipo] = useState(false);
@@ -25,20 +25,52 @@ export default function UsuariosScreen({ navigation }) {
     { label: 'Mais antigos', value: 'Mais antigos' },
   ]);
 
-  useEffect(() => {
-    const fetchUsuarios = async () => {
-      try {
-        const response = await axios.get('http://192.168.0.124:3000/api/users'); // Troque pela URL correta da sua API
-        setUsuarios(response.data);
-      } catch (error) {
-        console.error('Erro ao buscar usuários:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const [usuarios, setUsuarios] = useState([
+  {
+    _id: '1',
+    nome: 'João Silva',
+    email: 'joao.silva@email.com',
+    matricula: '12345',
+    acesso: '2025-06-01',
+    tipo: 'Administrador',
+    createdAt: '2025-06-01T10:00:00Z'
+  },
+  {
+    _id: '2',
+    nome: 'Maria Oliveira',
+    email: 'maria.oliveira@email.com',
+    matricula: '67890',
+    acesso: '2025-05-25',
+    tipo: 'Perito',
+    createdAt: '2025-05-25T09:00:00Z'
+  },
+  {
+    _id: '3',
+    nome: 'Carlos Pereira',
+    email: 'carlos.pereira@email.com',
+    matricula: '54321',
+    acesso: null,
+    tipo: 'Assistente',
+    createdAt: '2025-06-03T14:30:00Z'
+  },
+]);
 
-    fetchUsuarios();
-  }, []);
+
+  useEffect(() => {
+  const fetchUsuarios = async () => {
+    try {
+      const response = await axios.get('http://192.168.0.125:3000/api/users');
+      setUsuarios(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar usuários:', error);
+      // Caso erro, mantém os usuários de exemplo
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchUsuarios();
+}, []);
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
