@@ -17,6 +17,8 @@ export default function CadastroEvidenciaScreen({ navigation }) {
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showTimePicker, setShowTimePicker] = useState(false);
 
+    
+
     const salvarEvidencia = () => {
         const novaEvidencia = {
             id: Date.now().toString(),

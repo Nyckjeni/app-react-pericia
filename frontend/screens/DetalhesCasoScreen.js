@@ -183,7 +183,46 @@ export default function DetalhesCasoScreen({ route, navigation }) {
             </View>
 
             {/* Botão Gerar Laudo com componente GerarLaudoPdf */}
-            <GerarLaudoPdf evidencia={evidencia} />
+            <View style={styles.buttonRowEvidence}>
+              <TouchableOpacity
+                style={[styles.button, { backgroundColor: '#6B0D0D', flex: 1 }]}
+                onPress={() => {
+                  navigation.navigate('CadastroEvidencia', { evidencia, editar: true });
+                }}
+              >
+                <Ionicons name="create-outline" size={16} color="#fff" />
+                <Text style={styles.buttonText}>Editar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.button, { backgroundColor: '#B00020', flex: 1 }]}
+                onPress={() => {
+                  Alert.alert(
+                    'Excluir Evidência',
+                    'Tem certeza que deseja excluir esta evidência?',
+                    [
+                      { text: 'Cancelar', style: 'cancel' },
+                      {
+                        text: 'Excluir',
+                        style: 'destructive',
+                        onPress: () => {
+                          setEvidencias((prev) => prev.filter((e) => e.id !== evidencia.id));
+                        },
+                      },
+                    ]
+                  );
+                }}
+              >
+                <Ionicons name="trash-outline" size={16} color="#fff" />
+                <Text style={styles.buttonText}>Excluir</Text>
+              </TouchableOpacity>
+
+              <View style={{ flex: 1 }}>
+                <GerarLaudoPdf evidencia={evidencia} />
+              </View>
+            </View>
+
+
           </View>
         ))}
       </View>
@@ -361,4 +400,11 @@ const styles = StyleSheet.create({
   selectedOptionText: {
     color: '#fff',
   },
+  buttonRowEvidence: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    gap: 10, // Se não funcionar, use marginRight/marginLeft nos botões
+  },
+
 });
