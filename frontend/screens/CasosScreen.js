@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import BottomNavbar from '../components/BottomNavbar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
 const statusStyle = (status) => {
   switch (status) {
@@ -43,52 +45,23 @@ export default function CasosScreen({ navigation }) {
   const [erro, setErro] = useState(null);
 
   const modoTeste = true;
-
 useEffect(() => {
-  if (modoTeste) {
-    const exemplos = [ 
+  const getData = async ( )=> { 
+    const token= await AsyncStorage.getItem("acessToken")
+    try {
+      const response = await axios.get('http://192.168.0.125:3000/api/cases', {  
+        headers : {authorization:`Bearer ${token} `}}
+      )
+       setCasos(response.data);
 
-       {
-      id: '001',
-      titulo: 'Caso de Roubo',
-      descricao: 'Relato de roubo em residência no bairro Central.',
-      data: '2025-06-01',
-      responsavel: 'João Silva',
-      status: 'Em Andamento',
-    },
-    {
-      id: '002',
-      titulo: 'Acidente de Trânsito',
-      descricao: 'Acidente envolvendo dois veículos na Avenida Brasil.',
-      data: '2025-05-25',
-      responsavel: 'Maria Oliveira',
-      status: 'Arquivado',
-    },
-    {
-      id: '003',
-      titulo: 'Investigação de Homicídio',
-      descricao: 'Caso em investigação no bairro Sul.',
-      data: '2025-05-15',
-      responsavel: 'Carlos Pereira',
-      status: 'Finalizado',
-    },
-     ];
-    setCasos(exemplos);
-    setLoading(false);
-  } else {
-    fetch('http://192.168.0.125:3000/api/cases')
-      .then((res) => res.json())
-      .then((data) => {
-        setCasos(data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error('Erro ao buscar casos:', error);
-        setErro('Erro ao carregar os casos.');
-        setLoading(false);
-      });
-  }
-}, []);
+    } catch(error){ 
+      console.error('Erro na busca dos casos', error)}
+  } 
+  getData()
+},[])
+  
+
+
 
   const renderItem = ({ item }) => (
     <TouchableOpacity onPress={() => navigation.navigate('DetalhesCaso', { caso: item })}>

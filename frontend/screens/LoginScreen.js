@@ -46,10 +46,12 @@ export default function LoginScreen() {
       });
 
       const data = await response.json();
+      console.log(data)
 
       if (response.ok && data.accessToken) {
         // Salva tokens (opcional)
-        await AsyncStorage.setItem('accessToken', data.accessToken);
+       await AsyncStorage.setItem('accessToken', data.accessToken);
+       
         await AsyncStorage.setItem('refreshToken', data.refreshToken);
 
         // Redireciona

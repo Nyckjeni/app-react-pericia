@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
+import { Ionicons } from '@expo/vector-icons';  // Importa Ionicons
 
 export default function CadastrarUsuario() {
   const [nome, setNome] = useState('');
@@ -8,7 +9,7 @@ export default function CadastrarUsuario() {
   const [senha, setSenha] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [confirmarSenha, setConfirmarSenha] = useState('');
-  const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false);  // <-- Adicionado aqui
+  const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false);
 
   const [openCargo, setOpenCargo] = useState(false);
   const [cargo, setCargo] = useState(null);
@@ -46,7 +47,6 @@ export default function CadastrarUsuario() {
 
       if (response.ok) {
         Alert.alert('Sucesso', 'Usuário cadastrado com sucesso!');
-        // Limpar os campos após o sucesso
         setNome('');
         setEmail('');
         setSenha('');
@@ -102,9 +102,13 @@ export default function CadastrarUsuario() {
         />
         <TouchableOpacity
           onPress={() => setMostrarSenha(!mostrarSenha)}
-          style={styles.showHideButton}
+          style={styles.iconButton}
         >
-          <Text style={styles.showHideText}>{mostrarSenha ? 'Ocultar' : 'Mostrar'}</Text>
+          <Ionicons
+            name={mostrarSenha ? 'eye' : 'eye-off'}
+            size={24}
+            color="#6B0D0D"
+          />
         </TouchableOpacity>
       </View>
 
@@ -118,9 +122,13 @@ export default function CadastrarUsuario() {
         />
         <TouchableOpacity
           onPress={() => setMostrarConfirmarSenha(!mostrarConfirmarSenha)}
-          style={styles.showHideButton}
+          style={styles.iconButton}
         >
-          <Text style={styles.showHideText}>{mostrarConfirmarSenha ? 'Ocultar' : 'Mostrar'}</Text>
+          <Ionicons
+            name={mostrarConfirmarSenha ? 'eye' : 'eye-off'}
+            size={24}
+            color="#6B0D0D"
+          />
         </TouchableOpacity>
       </View>
 
@@ -158,12 +166,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  showHideButton: {
-    marginLeft: 8,
-  },
-  showHideText: {
-    color: '#6B0D0D',
-    fontWeight: 'bold',
+  iconButton: {
+    paddingHorizontal: 8,
   },
   button: {
     backgroundColor: '#6B0D0D',

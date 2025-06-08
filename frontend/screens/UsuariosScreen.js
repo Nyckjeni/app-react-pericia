@@ -73,18 +73,21 @@ export default function UsuariosScreen({ navigation }) {
 }, []);
 
   const renderItem = ({ item }) => (
-    <View style={styles.card}>
-      <Text style={styles.name}>{item.nome}</Text>
-      <Text><Text style={styles.bold}>Email:</Text> {item.email}</Text>
-      <Text><Text style={styles.bold}>Matrícula:</Text> {item.matricula || 'N/A'}</Text>
-      <Text><Text style={styles.bold}>Cadastrado em:</Text> {item.acesso || 'Nunca acessou'}</Text>
-      <View style={styles.badgeContainer}>
-        <Text style={[styles.badge, item.tipo === 'Administrador' ? styles.adminBadge : styles.peritoBadge]}>
-          {item.tipo}
-        </Text>
-      </View>
+  <TouchableOpacity
+    style={styles.card}
+    onPress={() => navigation.navigate('EditarUsuario', { usuario: item })}
+  >
+    <Text style={styles.name}>{item.nome}</Text>
+    <Text><Text style={styles.bold}>Email:</Text> {item.email}</Text>
+    <Text><Text style={styles.bold}>Matrícula:</Text> {item.matricula || 'N/A'}</Text>
+    <Text><Text style={styles.bold}>Cadastrado em:</Text> {item.acesso || 'Nunca acessou'}</Text>
+    <View style={styles.badgeContainer}>
+      <Text style={[styles.badge, item.tipo === 'Administrador' ? styles.adminBadge : styles.peritoBadge]}>
+        {item.tipo}
+      </Text>
     </View>
-  );
+  </TouchableOpacity>
+);
 
   const usuariosFiltrados = usuarios
     .filter((usuario) => tipoFiltro === 'Todos' || usuario.tipo === tipoFiltro)
