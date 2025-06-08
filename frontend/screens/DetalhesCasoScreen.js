@@ -1,34 +1,68 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Pressable } from 'react-native';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
+import { Alert } from 'react-native';
+
 import GerarRelatorioPdf from '../components/GerarRelatorioPdf';
-import ModalNovaEvidencia from '../components/ModalNovaEvidencia';
+import GerarLaudoPdf from '../components/GerarLaudoPdf';
 
 
-export default function DetalhesCasoScreen({ route }) {
+
+export default function DetalhesCasoScreen({ route, navigation }) {
   const { caso = {} } = route.params || {};
 
-  // Estado local para o status, iniciando pelo status do caso ou 'Em Andamento'
   const [status, setStatus] = useState(caso.status || 'Em Andamento');
   const [modalVisible, setModalVisible] = useState(false);
 
-  // Função para mostrar campo com fallback
   const mostrarCampo = (campo) => {
     if (campo === null || campo === undefined || campo === '') {
       return 'Não informado';
     }
     return campo;
   };
-  const [modalVisivel, setModalVisivel] = useState(false);
 
+  const excluirCaso = () => {
+    Alert.alert(
+      'Confirmar Exclusão',
+      'Tem certeza que deseja excluir este caso e todas as evidências relacionadas?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: () => {
+            // Aqui você faria a exclusão do banco de dados:
+            // await api.delete(`/casos/${caso.id}`);
+            // await api.delete(`/evidencias?casoId=${caso.id}`);
 
-  // Função para alterar status e fechar modal
+            // Simula exclusão local:
+            console.log('Caso excluído:', caso.id);
+            setEvidencias([]);
+            navigation.goBack(); // Volta para a tela anterior
+          },
+        },
+      ]
+    );
+  };
+
   const alterarStatus = (novoStatus) => {
     setStatus(novoStatus);
     setModalVisible(false);
   };
+  //Se já estiver pegando as evidências do banco, use useEffect() para carregar e setar no estado.
+  const [evidencias, setEvidencias] = useState([
+    {
+      id: 'EV-001',
+      titulo: 'Dente Canino inferior no local do Acidente',
+      descricao: 'Fragmento dental encontrado na cena do acidente com possíveis marcas.',
+      data: '16/05/2024',
+      tipo: 'Foto',
+    },
+    // novas evidências virão aqui
+  ]);
 
   return (
     <ScrollView style={styles.container}>
@@ -66,7 +100,7 @@ export default function DetalhesCasoScreen({ route }) {
             <Text style={styles.buttonText}>Editar</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity style={styles.button} onPress={excluirCaso}>
             <Ionicons name="trash-outline" size={16} color="#fff" />
             <Text style={styles.buttonText}>Excluir</Text>
           </TouchableOpacity>
@@ -126,28 +160,32 @@ export default function DetalhesCasoScreen({ route }) {
         <Text style={styles.sectionTitle}>Evidências</Text>
 
         {/* Botão Adicionar */}
-        <TouchableOpacity style={styles.addButton}>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => navigation.navigate('CadastroEvidencia')}
+        >
           <Ionicons name="add" size={18} color="#fff" />
           <Text style={styles.addButtonText}>Adicionar</Text>
         </TouchableOpacity>
 
-        {/* Cartão de Evidência */}
-        <View style={styles.evidenceCard}>
-          <Text style={styles.evidenceTitle}>
-            <Text style={styles.evidenceId}>#EV-001</Text> Dente Canino inferior no local do Acidente
-          </Text>
+        {/* Lista de Evidências */}
+        {evidencias.map((evidencia) => (
+          <View key={evidencia.id} style={styles.evidenceCard}>
+            <Text style={styles.evidenceTitle}>
+              <Text style={styles.evidenceId}>#{evidencia.id}</Text> {evidencia.titulo}
+            </Text>
 
-          <View style={styles.evidenceInfoRow}>
-            <MaterialIcons name="date-range" size={16} color="#555" />
-            <Text style={styles.evidenceInfoText}>16/05/2024</Text>
-            <FontAwesome5 name="image" size={14} color="#555" style={{ marginLeft: 12 }} />
-            <Text style={styles.evidenceInfoText}>Foto</Text>
+            <View style={styles.evidenceInfoRow}>
+              <MaterialIcons name="date-range" size={16} color="#555" />
+              <Text style={styles.evidenceInfoText}>{evidencia.data}</Text>
+              <FontAwesome5 name="image" size={14} color="#555" style={{ marginLeft: 12 }} />
+              <Text style={styles.evidenceInfoText}>{evidencia.tipo}</Text>
+            </View>
+
+            {/* Botão Gerar Laudo com componente GerarLaudoPdf */}
+            <GerarLaudoPdf evidencia={evidencia} />
           </View>
-
-          <TouchableOpacity style={styles.reportButton}>
-            <Text style={styles.reportButtonText}>Gerar Laudo</Text>
-          </TouchableOpacity>
-        </View>
+        ))}
       </View>
     </ScrollView>
   );

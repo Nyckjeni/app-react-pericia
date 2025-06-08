@@ -29,7 +29,7 @@ export default function CadastrarUsuario() {
     }
 
     try {
-      const response = await fetch('http://192.168.0.124:3000/api/users', {
+      const response = await fetch('http://192.168.0.125:3000/api/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
