@@ -24,43 +24,58 @@ export default function DashboardScreen({ navigation }) {
   const [identificacaoData, setIdentificacaoData] = useState([]);
 
   const fetchDadosDashboard = async () => {
+  try {
+    const response = await fetch('https://dentcase-backend.onrender.com', {
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+
+    const text = await response.text();
+    console.log('Resposta bruta:', text);
+
+    let data;
     try {
-      const response = await fetch('https://dentcase-backend.onrender.com/dashboard');
-      const data = await response.json();
-
-      setRegressaoData({
-        labels: data.regressao.labels,
-        datasets: data.regressao.datasets.map(ds => ({
-          data: ds.data,
-          color: () => ds.color
-        })),
-        legend: data.regressao.legend,
-      });
-
-      setFaixaEtariaData(data.faixaEtaria);
-
-      setGeneroTipoData({
-        labels: data.generoTipo.labels,
-        datasets: data.generoTipo.datasets.map(ds => ({
-          data: ds.data,
-          color: () => ds.color
-        })),
-        legend: data.generoTipo.legend,
-      });
-
-      setBairroData(data.bairros);
-
-      setIdentificacaoData(
-        data.identificacao.map(item => ({
-          ...item,
-          legendFontColor: '#000',
-          legendFontSize: 12
-        }))
-      );
-    } catch (error) {
-      console.error('Erro ao buscar dados do dashboard:', error);
+      data = JSON.parse(text);
+    } catch (jsonError) {
+      console.error('Erro ao tentar converter resposta em JSON:', jsonError);
+      return;
     }
-  };
+
+    setRegressaoData({
+      labels: data.regressao.labels,
+      datasets: data.regressao.datasets.map(ds => ({
+        data: ds.data,
+        color: () => ds.color
+      })),
+      legend: data.regressao.legend,
+    });
+
+    setFaixaEtariaData(data.faixaEtaria);
+
+    setGeneroTipoData({
+      labels: data.generoTipo.labels,
+      datasets: data.generoTipo.datasets.map(ds => ({
+        data: ds.data,
+        color: () => ds.color
+      })),
+      legend: data.generoTipo.legend,
+    });
+
+    setBairroData(data.bairros);
+
+    setIdentificacaoData(
+      data.identificacao.map(item => ({
+        ...item,
+        legendFontColor: '#000',
+        legendFontSize: 12
+      }))
+    );
+  } catch (error) {
+    console.error('Erro ao buscar dados do dashboard:', error);
+  }
+};
+
 
   useEffect(() => {
     fetchDadosDashboard();

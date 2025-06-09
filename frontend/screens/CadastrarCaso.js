@@ -11,6 +11,7 @@ import { Picker } from '@react-native-picker/picker';
 import BottomNavbar from '../components/BottomNavbar';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function CadastrarCaso({ navigation }) {
   const [casoId, setCasoId] = useState('');
@@ -81,72 +82,74 @@ export default function CadastrarCaso({ navigation }) {
   };
 
   const handleSubmit = async () => {
-    if (
-      !descricao.trim() ||
-      vitimas.some(
-        (v) =>
-          !v.nome ||
+  if (
+    !descricao.trim() ||
+    vitimas.some(
+      (v) =>
+        !v.nome ||
+        !v.documento
+    )
+  ) {
+    Alert.alert(
+      'Erro',
+      'Preencha todos os campos obrigatórios das vítimas e descrição do caso.'
+    );
+    return;
+  }
 
-          !v.documento
-      )
-    ) {
-      Alert.alert(
-        'Erro',
-        'Preencha todos os campos obrigatórios das vítimas e descrição do caso.'
-      );
-      return;
-    }
+  if (!token) {
+    Alert.alert('Erro', 'Usuário não autenticado.');
+    return;
+  }
 
-    const dadosCaso = {
-      casoId,
-      status,
-      descricao,
-      estado,
-      municipio,
-      dataIncidente,
-      localIncidente,
-      descricaoIncidente,
-      instrumento,
-      tipoCaso,
-      vitimaIdentificada,
-      regioesLesionadas,
-      vitimas,
-    };
-
-    try {
-      const response = await fetch('https://dentcase-backend.onrender.com', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // <- ESSENCIAL
-        },
-        body: JSON.stringify(formData)
-      });
-      if (response.ok) {
-        Alert.alert('Sucesso', 'Caso cadastrado com sucesso!');
-        setDescricao('');
-        setVitimas([
-          {
-            id: Date.now(),
-
-            nome: '',
-            dataNascimento: '',
-
-            genero: '',
-            documento: '',
-            contato: '',
-
-          },
-        ]);
-      } else {
-        const error = await response.json();
-        Alert.alert('Erro', error.message || 'Erro ao cadastrar o caso.');
-      }
-    } catch (error) {
-      Alert.alert('Erro', 'Erro de conexão com o servidor.');
-      console.error('Erro ao enviar dados:', error);
-    }
+  const dadosCaso = {
+    casoId,
+    status,
+    descricao,
+    estado,
+    municipio,
+    dataIncidente,
+    localIncidente,
+    descricaoIncidente,
+    instrumento,
+    tipoCaso,
+    vitimaIdentificada,
+    regioesLesionadas,
+    vitimas,
   };
+
+  try {
+    const response = await fetch('https://dentcase-backend.onrender.com', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dadosCaso),
+    });
+
+    if (response.ok) {
+      Alert.alert('Sucesso', 'Caso cadastrado com sucesso!');
+      setDescricao('');
+      setVitimas([
+        {
+          id: Date.now(),
+          nome: '',
+          dataNascimento: '',
+          genero: '',
+          documento: '',
+          contato: '',
+        },
+      ]);
+    } else {
+      const error = await response.json();
+      Alert.alert('Erro', error.message || 'Erro ao cadastrar o caso.');
+    }
+  } catch (error) {
+    Alert.alert('Erro', 'Erro de conexão com o servidor.');
+    console.error('Erro ao enviar dados:', error);
+  }
+};
 
   return (
     <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
