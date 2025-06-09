@@ -47,7 +47,7 @@ export default function CasosScreen({ navigation }) {
   const modoTeste = true;
 useEffect(() => {
   const getData = async ( )=> { 
-    const token= await AsyncStorage.getItem("acessToken")
+    const token= await AsyncStorage.getItem("accessToken")
     try {
       const response = await axios.get('https://dentcase-backend.onrender.com/api/cases', {  
         headers : {authorization:`Bearer ${token}`}}
