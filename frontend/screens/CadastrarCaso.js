@@ -114,7 +114,7 @@ export default function CadastrarCaso({ navigation }) {
     };
 
     try {
-      const response = await fetch('http://192.168.0.124:3000/api/cases', {
+      const response = await fetch('https://dentcase-backend.onrender.com', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

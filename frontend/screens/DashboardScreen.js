@@ -1,7 +1,7 @@
-import React from 'react'; 
+import React, { useEffect, useState } from 'react';
 import { ScrollView, Text, View, Dimensions, StyleSheet } from 'react-native';
 import { BarChart, PieChart, LineChart } from 'react-native-chart-kit';
-import BottomNavbar from '../components/BottomNavbar'; // importe a BottomNavbar
+import BottomNavbar from '../components/BottomNavbar';
 
 const screenWidth = Dimensions.get('window').width;
 const chartConfig = {
@@ -17,101 +17,135 @@ const chartConfig = {
 };
 
 export default function DashboardScreen({ navigation }) {
+  const [regressaoData, setRegressaoData] = useState(null);
+  const [faixaEtariaData, setFaixaEtariaData] = useState(null);
+  const [generoTipoData, setGeneroTipoData] = useState(null);
+  const [bairroData, setBairroData] = useState(null);
+  const [identificacaoData, setIdentificacaoData] = useState([]);
+
+  const fetchDadosDashboard = async () => {
+    try {
+      const response = await fetch('https://dentcase-backend.onrender.com/dashboard');
+      const data = await response.json();
+
+      setRegressaoData({
+        labels: data.regressao.labels,
+        datasets: data.regressao.datasets.map(ds => ({
+          data: ds.data,
+          color: () => ds.color
+        })),
+        legend: data.regressao.legend,
+      });
+
+      setFaixaEtariaData(data.faixaEtaria);
+
+      setGeneroTipoData({
+        labels: data.generoTipo.labels,
+        datasets: data.generoTipo.datasets.map(ds => ({
+          data: ds.data,
+          color: () => ds.color
+        })),
+        legend: data.generoTipo.legend,
+      });
+
+      setBairroData(data.bairros);
+
+      setIdentificacaoData(
+        data.identificacao.map(item => ({
+          ...item,
+          legendFontColor: '#000',
+          legendFontSize: 12
+        }))
+      );
+    } catch (error) {
+      console.error('Erro ao buscar dados do dashboard:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchDadosDashboard();
+  }, []);
+
   return (
     <>
       <ScrollView contentContainerStyle={styles.container}>
         {/* Distribuição Temporal dos Casos */}
         <View style={styles.card}>
           <Text style={styles.title}>Distribuição Temporal dos Casos</Text>
-          {/* Gráfico pode ser adicionado futuramente */}
+          {/* Você pode incluir o gráfico no futuro aqui */}
         </View>
 
         {/* Previsão de Casos (Regressão) */}
-        <View style={styles.card}>
-          <Text style={styles.title}>Previsão de Casos (Regressão)</Text>
-          <LineChart
-            data={{
-              labels: ['0-10', '11-20', '21-30', '31-40', '41-50'],
-              datasets: [
-                { data: [0.2, 0.3, 0.1, 0.05, 0.02], color: () => '#FFD700' },
-                { data: [0.1, 0.1, 0.1, 0.1, 0.1], color: () => '#6B0D0D' },
-              ],
-              legend: ['Proporção real', 'Curva de regressão logística'],
-            }}
-            width={screenWidth - 40}
-            height={200}
-            chartConfig={chartConfig}
-            bezier
-          />
-        </View>
+        {regressaoData && (
+          <View style={styles.card}>
+            <Text style={styles.title}>Previsão de Casos (Regressão)</Text>
+            <LineChart
+              data={regressaoData}
+              width={screenWidth - 40}
+              height={200}
+              chartConfig={chartConfig}
+              bezier
+            />
+          </View>
+        )}
 
         {/* Vítimas por Faixa Etária */}
-        <View style={styles.card}>
-          <Text style={styles.title}>Vítimas por Faixa Etária</Text>
-          <BarChart
-            data={{
-              labels: ['0-17', '18-30', '31-45', '46-60'],
-              datasets: [{ data: [3, 6, 7, 1] }],
-            }}
-            width={screenWidth - 40}
-            height={220}
-            chartConfig={chartConfig}
-          />
-        </View>
+        {faixaEtariaData && (
+          <View style={styles.card}>
+            <Text style={styles.title}>Vítimas por Faixa Etária</Text>
+            <BarChart
+              data={faixaEtariaData}
+              width={screenWidth - 40}
+              height={220}
+              chartConfig={chartConfig}
+            />
+          </View>
+        )}
 
         {/* Gênero por Tipo de Ocorrência */}
-        <View style={styles.card}>
-          <Text style={styles.title}>Gênero por Tipo de Ocorrência</Text>
-          <BarChart
-            data={{
-              labels: ['morte', 'acidente', 'Não informado'],
-              datasets: [
-                { data: [1, 5, 0], color: () => '#6B0D0D' },
-                { data: [1, 3, 0], color: () => '#A52A2A' },
-                { data: [1, 3, 0], color: () => '#FFA07A' },
-              ],
-              legend: ['masculino', 'feminino', 'outro'],
-            }}
-            width={screenWidth - 40}
-            height={220}
-            chartConfig={chartConfig}
-          />
-        </View>
+        {generoTipoData && (
+          <View style={styles.card}>
+            <Text style={styles.title}>Gênero por Tipo de Ocorrência</Text>
+            <BarChart
+              data={generoTipoData}
+              width={screenWidth - 40}
+              height={220}
+              chartConfig={chartConfig}
+            />
+          </View>
+        )}
 
         {/* Casos por Bairro */}
-        <View style={styles.card}>
-          <Text style={styles.title}>Casos por Bairro</Text>
-          <BarChart
-            data={{
-              labels: ['Paulista', 'Recife', 'Prado', 'Belém', 'São Francisco'],
-              datasets: [{ data: [6, 4, 1, 1, 1] }],
-            }}
-            width={screenWidth - 40}
-            height={220}
-            chartConfig={chartConfig}
-          />
-        </View>
+        {bairroData && (
+          <View style={styles.card}>
+            <Text style={styles.title}>Casos por Bairro</Text>
+            <BarChart
+              data={bairroData}
+              width={screenWidth - 40}
+              height={220}
+              chartConfig={chartConfig}
+            />
+          </View>
+        )}
 
         {/* Vítimas Identificadas vs Não Identificadas */}
-        <View style={styles.card}>
-          <Text style={styles.title}>Vítimas Identificadas vs Não Identificadas</Text>
-          <PieChart
-            data={[
-              { name: 'Identificada', population: 16, color: '#6B0D0D', legendFontColor: '#000', legendFontSize: 12 },
-              { name: 'Não identificada', population: 1, color: '#C05050', legendFontColor: '#000', legendFontSize: 12 },
-            ]}
-            width={screenWidth - 40}
-            height={220}
-            chartConfig={chartConfig}
-            accessor={'population'}
-            backgroundColor={'transparent'}
-            paddingLeft={'15'}
-            absolute
-          />
-        </View>
+        {identificacaoData.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.title}>Vítimas Identificadas vs Não Identificadas</Text>
+            <PieChart
+              data={identificacaoData}
+              width={screenWidth - 40}
+              height={220}
+              chartConfig={chartConfig}
+              accessor={'population'}
+              backgroundColor={'transparent'}
+              paddingLeft={'15'}
+              absolute
+            />
+          </View>
+        )}
       </ScrollView>
 
-      {/* Navbar fixo na parte inferior */}
       <BottomNavbar
         navigation={navigation}
         activeRoute="Dashboard"
@@ -124,7 +158,7 @@ export default function DashboardScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     padding: 20,
-    paddingBottom: 100, // Espaço para o menu fixo
+    paddingBottom: 100,
   },
   card: {
     backgroundColor: '#fff',

@@ -59,7 +59,7 @@ export default function UsuariosScreen({ navigation }) {
   useEffect(() => {
   const fetchUsuarios = async () => {
     try {
-      const response = await axios.get('http://192.168.0.125:3000/api/users');
+      const response = await axios.get('https://dentcase-backend.onrender.com/api/users');
       setUsuarios(response.data);
     } catch (error) {
       console.error('Erro ao buscar usuários:', error);

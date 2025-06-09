@@ -49,8 +49,8 @@ useEffect(() => {
   const getData = async ( )=> { 
     const token= await AsyncStorage.getItem("acessToken")
     try {
-      const response = await axios.get('http://192.168.0.125:3000/api/cases', {  
-        headers : {authorization:`Bearer ${token} `}}
+      const response = await axios.get('https://dentcase-backend.onrender.com/api/cases', {  
+        headers : {authorization:`Bearer ${token}`}}
       )
        setCasos(response.data);
 

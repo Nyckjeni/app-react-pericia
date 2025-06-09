@@ -12,26 +12,57 @@ export default function CadastroEvidenciaScreen({ navigation }) {
     const [descricao, setDescricao] = useState('');
     const [latitude, setLatitude] = useState('');
     const [longitude, setLongitude] = useState('');
-    const [imagem, setImagem] = useState('');
+    const [imagem, setImagem] = useState(null);
     const [arquivo, setArquivo] = useState(null);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showTimePicker, setShowTimePicker] = useState(false);
 
-    
+    const salvarEvidencia = async () => {
+        const formData = new FormData();
 
-    const salvarEvidencia = () => {
-        const novaEvidencia = {
-            id: Date.now().toString(),
-            descricao,
-            dataColeta: dataColeta.toLocaleDateString(),
-            hora,
-            latitude,
-            longitude,
-            imagem,
-            arquivo,
-        };
+        formData.append('descricao', descricao);
+        formData.append('dataColeta', dataColeta.toISOString().split('T')[0]);
+        formData.append('hora', hora || '');
+        formData.append('latitude', latitude);
+        formData.append('longitude', longitude);
 
-        navigation.navigate('DetalhesCaso', { novaEvidencia });
+        if (imagem && imagem.assets && imagem.assets[0]) {
+            const img = imagem.assets[0];
+            formData.append('imagem', {
+                uri: img.uri,
+                name: img.fileName || 'imagem.jpg',
+                type: img.type || 'image/jpeg'
+            });
+        }
+
+        if (arquivo && arquivo.uri) {
+            formData.append('arquivo', {
+                uri: arquivo.uri,
+                name: arquivo.name || 'arquivo',
+                type: arquivo.mimeType || 'application/octet-stream'
+            });
+        }
+
+        try {
+            const response = await fetch('https://SEU_BACKEND_RENDER_URL/evidencias', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                navigation.navigate('DetalhesCaso', { novaEvidencia: data });
+            } else {
+                alert('Erro ao salvar evidência: ' + data.message);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Erro ao conectar com o servidor.');
+        }
     };
 
     const usarMinhaLocalizacao = async () => {
@@ -43,9 +74,22 @@ export default function CadastroEvidenciaScreen({ navigation }) {
         setLongitude(location.coords.longitude.toString());
     };
 
+    const escolherImagem = async () => {
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            quality: 1,
+        });
+        if (!result.canceled) {
+            setImagem(result);
+        }
+    };
+
     const escolherArquivo = async () => {
         const result = await DocumentPicker.getDocumentAsync({});
-        if (result.type === 'success') setArquivo(result);
+        if (result.type === 'success') {
+            setArquivo(result);
+        }
     };
 
     return (
@@ -108,8 +152,10 @@ export default function CadastroEvidenciaScreen({ navigation }) {
                 <Text style={{ color: '#fff' }}>📍 Usar Minha Localização</Text>
             </TouchableOpacity>
 
-            <Text>Imagem (URL):</Text>
-            <TextInput placeholder="Opcional" value={imagem} onChangeText={setImagem} style={styles.input} />
+            <Text>Imagem:</Text>
+            <TouchableOpacity style={styles.input} onPress={escolherImagem}>
+                <Text>{imagem?.assets?.[0]?.fileName || 'Selecionar imagem'}</Text>
+            </TouchableOpacity>
 
             <Text>Arquivo:</Text>
             <TouchableOpacity onPress={escolherArquivo} style={styles.input}>

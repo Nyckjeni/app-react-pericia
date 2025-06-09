@@ -63,7 +63,7 @@ export default function EditarUsuarioScreen({ route, navigation }) {
         style: 'destructive',
         onPress: async () => {
           try {
-            await axios.delete(`http://192.168.0.125:3000/api/users/${usuario._id}`);
+            await axios.delete(`https://dentcase-backend.onrender.com/api/users/${usuario._id}`);
             Alert.alert('Sucesso', 'Usuário excluído com sucesso!');
             navigation.goBack();
           } catch (error) {

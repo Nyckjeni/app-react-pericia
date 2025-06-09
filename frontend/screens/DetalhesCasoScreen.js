@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Pressable } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Pressable, Alert } from 'react-native';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
-import { Alert } from 'react-native';
 
 import GerarRelatorioPdf from '../components/GerarRelatorioPdf';
 import GerarLaudoPdf from '../components/GerarLaudoPdf';
-
+import api from '../services/api';
 
 
 export default function DetalhesCasoScreen({ route, navigation }) {
@@ -13,12 +12,26 @@ export default function DetalhesCasoScreen({ route, navigation }) {
 
   const [status, setStatus] = useState(caso.status || 'Em Andamento');
   const [modalVisible, setModalVisible] = useState(false);
+  const [evidencias, setEvidencias] = useState([]);
+
+  useEffect(() => {
+    const carregarEvidencias = async () => {
+      try {
+        // const response = await api.get(`/evidencias?casoId=${caso.id}`);
+        // setEvidencias(response.data);
+        console.log('Carregando evidências do caso:', caso.id);
+      } catch (error) {
+        console.error('Erro ao carregar evidências:', error);
+      }
+    };
+
+    if (caso.id) {
+      carregarEvidencias();
+    }
+  }, [caso.id]);
 
   const mostrarCampo = (campo) => {
-    if (campo === null || campo === undefined || campo === '') {
-      return 'Não informado';
-    }
-    return campo;
+    return campo ? campo : 'Não informado';
   };
 
   const excluirCaso = () => {
@@ -26,50 +39,51 @@ export default function DetalhesCasoScreen({ route, navigation }) {
       'Confirmar Exclusão',
       'Tem certeza que deseja excluir este caso e todas as evidências relacionadas?',
       [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
+        { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Excluir',
           style: 'destructive',
-          onPress: () => {
-            // Aqui você faria a exclusão do banco de dados:
-            // await api.delete(`/casos/${caso.id}`);
-            // await api.delete(`/evidencias?casoId=${caso.id}`);
-
-            // Simula exclusão local:
-            console.log('Caso excluído:', caso.id);
-            setEvidencias([]);
-            navigation.goBack(); // Volta para a tela anterior
+          onPress: async () => {
+            try {
+              // await api.delete(`/casos/${caso.id}`);
+              // await api.delete(`/evidencias?casoId=${caso.id}`);
+              console.log('Caso excluído:', caso.id);
+              setEvidencias([]);
+              navigation.goBack();
+            } catch (error) {
+              console.error('Erro ao excluir caso:', error);
+              Alert.alert('Erro', 'Não foi possível excluir o caso.');
+            }
           },
         },
       ]
     );
   };
 
-  const alterarStatus = (novoStatus) => {
-    setStatus(novoStatus);
-    setModalVisible(false);
+  const alterarStatus = async (novoStatus) => {
+    try {
+      setStatus(novoStatus);
+      setModalVisible(false);
+      // await api.patch(`/casos/${caso.id}`, { status: novoStatus });
+      console.log(`Status alterado para: ${novoStatus}`);
+    } catch (error) {
+      console.error('Erro ao alterar status:', error);
+      Alert.alert('Erro', 'Não foi possível alterar o status.');
+    }
   };
-  //Se já estiver pegando as evidências do banco, use useEffect() para carregar e setar no estado.
-  const [evidencias, setEvidencias] = useState([
-    {
-      id: 'EV-001',
-      titulo: 'Dente Canino inferior no local do Acidente',
-      descricao: 'Fragmento dental encontrado na cena do acidente com possíveis marcas.',
-      data: '16/05/2024',
-      tipo: 'Foto',
-    },
-    // novas evidências virão aqui
-  ]);
+
+  const excluirEvidencia = async (id) => {
+    try {
+      // await api.delete(`/evidencias/${id}`);
+      setEvidencias((prev) => prev.filter((e) => e.id !== id));
+    } catch (error) {
+      console.error('Erro ao excluir evidência:', error);
+      Alert.alert('Erro', 'Não foi possível excluir a evidência.');
+    }
+  };
 
   return (
     <ScrollView style={styles.container}>
-      {/* Cabeçalho */}
-      <Text style={styles.sectionTitle}></Text>
-
-      {/* Cartão do Caso no mesmo formato do card da lista */}
       <View style={styles.card}>
         <Text style={styles.caseTitle}>{mostrarCampo(caso.titulo)}</Text>
 
@@ -78,22 +92,10 @@ export default function DetalhesCasoScreen({ route, navigation }) {
           <Text style={styles.status}>{status}</Text>
         </View>
 
-        <Text style={styles.description}>
-          <Text style={styles.label}>Descrição: </Text>
-          {mostrarCampo(caso.descricao)}
-        </Text>
+        <Text style={styles.description}><Text style={styles.label}>Descrição: </Text>{mostrarCampo(caso.descricao)}</Text>
+        <Text style={styles.description}><Text style={styles.label}>Perito: </Text>{mostrarCampo(caso.perito)}</Text>
+        <Text style={styles.description}><Text style={styles.label}>Data Abertura: </Text>{mostrarCampo(caso.data)}</Text>
 
-        <Text style={styles.description}>
-          <Text style={styles.label}>Perito: </Text>
-          {mostrarCampo(caso.perito)}
-        </Text>
-
-        <Text style={styles.description}>
-          <Text style={styles.label}>Data Abertura: </Text>
-          {mostrarCampo(caso.data)}
-        </Text>
-
-        {/* Botões */}
         <View style={styles.buttonRow}>
           <TouchableOpacity style={styles.button}>
             <Ionicons name="create-outline" size={16} color="#fff" />
@@ -114,37 +116,21 @@ export default function DetalhesCasoScreen({ route, navigation }) {
         </View>
       </View>
 
-      {/* Modal para escolher status */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
+      <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>Escolha o novo status</Text>
-
             {['Em Andamento', 'Finalizado', 'Arquivado'].map((option) => (
               <Pressable
                 key={option}
-                style={[
-                  styles.statusOption,
-                  status === option && styles.selectedOption,
-                ]}
+                style={[styles.statusOption, status === option && styles.selectedOption]}
                 onPress={() => alterarStatus(option)}
               >
-                <Text
-                  style={[
-                    styles.statusOptionText,
-                    status === option && styles.selectedOptionText,
-                  ]}
-                >
+                <Text style={[styles.statusOptionText, status === option && styles.selectedOptionText]}>
                   {option}
                 </Text>
               </Pressable>
             ))}
-
             <TouchableOpacity
               style={[styles.button, { alignSelf: 'flex-end', marginTop: 10 }]}
               onPress={() => setModalVisible(false)}
@@ -155,20 +141,17 @@ export default function DetalhesCasoScreen({ route, navigation }) {
         </View>
       </Modal>
 
-      {/* Seção Evidências */}
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Evidências</Text>
 
-        {/* Botão Adicionar */}
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => navigation.navigate('CadastroEvidencia')}
+          onPress={() => navigation.navigate('CadastroEvidencia', { casoId: caso.id })}
         >
           <Ionicons name="add" size={18} color="#fff" />
           <Text style={styles.addButtonText}>Adicionar</Text>
         </TouchableOpacity>
 
-        {/* Lista de Evidências */}
         {evidencias.map((evidencia) => (
           <View key={evidencia.id} style={styles.evidenceCard}>
             <Text style={styles.evidenceTitle}>
@@ -182,13 +165,10 @@ export default function DetalhesCasoScreen({ route, navigation }) {
               <Text style={styles.evidenceInfoText}>{evidencia.tipo}</Text>
             </View>
 
-            {/* Botão Gerar Laudo com componente GerarLaudoPdf */}
             <View style={styles.buttonRowEvidence}>
               <TouchableOpacity
                 style={[styles.button, { backgroundColor: '#6B0D0D', flex: 1 }]}
-                onPress={() => {
-                  navigation.navigate('CadastroEvidencia', { evidencia, editar: true });
-                }}
+                onPress={() => navigation.navigate('CadastroEvidencia', { evidencia, editar: true })}
               >
                 <Ionicons name="create-outline" size={16} color="#fff" />
                 <Text style={styles.buttonText}>Editar</Text>
@@ -196,22 +176,12 @@ export default function DetalhesCasoScreen({ route, navigation }) {
 
               <TouchableOpacity
                 style={[styles.button, { backgroundColor: '#B00020', flex: 1 }]}
-                onPress={() => {
-                  Alert.alert(
-                    'Excluir Evidência',
-                    'Tem certeza que deseja excluir esta evidência?',
-                    [
-                      { text: 'Cancelar', style: 'cancel' },
-                      {
-                        text: 'Excluir',
-                        style: 'destructive',
-                        onPress: () => {
-                          setEvidencias((prev) => prev.filter((e) => e.id !== evidencia.id));
-                        },
-                      },
-                    ]
-                  );
-                }}
+                onPress={() =>
+                  Alert.alert('Excluir Evidência', 'Tem certeza que deseja excluir esta evidência?', [
+                    { text: 'Cancelar', style: 'cancel' },
+                    { text: 'Excluir', style: 'destructive', onPress: () => excluirEvidencia(evidencia.id) },
+                  ])
+                }
               >
                 <Ionicons name="trash-outline" size={16} color="#fff" />
                 <Text style={styles.buttonText}>Excluir</Text>
@@ -221,8 +191,6 @@ export default function DetalhesCasoScreen({ route, navigation }) {
                 <GerarLaudoPdf evidencia={evidencia} />
               </View>
             </View>
-
-
           </View>
         ))}
       </View>
