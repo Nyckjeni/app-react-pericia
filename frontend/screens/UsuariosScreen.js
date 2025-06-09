@@ -4,6 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import DropDownPicker from 'react-native-dropdown-picker';
 import BottomNavbar from '../components/BottomNavbar';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 export default function UsuariosScreen({ navigation }) {
   
@@ -59,11 +61,25 @@ export default function UsuariosScreen({ navigation }) {
   useEffect(() => {
   const fetchUsuarios = async () => {
     try {
-      const response = await axios.get('https://dentcase-backend.onrender.com/api/users');
+      const token = await AsyncStorage.getItem("accessToken");
+      console.log("TOKEN:", token);
+
+      if (!token) {
+        console.error("Token não encontrado");
+        setLoading(false);
+        return;
+      }
+
+      const response = await axios.get('https://dentcase-backend.onrender.com/api/users', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log("Usuários recebidos:", response.data);
       setUsuarios(response.data);
     } catch (error) {
       console.error('Erro ao buscar usuários:', error);
-      // Caso erro, mantém os usuários de exemplo
     } finally {
       setLoading(false);
     }
