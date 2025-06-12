@@ -1,90 +1,146 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  Keyboard,
+  ActivityIndicator,
+} from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
-import { Ionicons } from '@expo/vector-icons';  // Importa Ionicons
+import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function CadastrarUsuario() {
-  const [nome, setNome] = useState('');
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
-  const [mostrarSenha, setMostrarSenha] = useState(false);
-  const [confirmarSenha, setConfirmarSenha] = useState('');
-  const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false);
+const apiBase = 'https://dentcase-backend.onrender.com/api';
 
-  const [openCargo, setOpenCargo] = useState(false);
-  const [cargo, setCargo] = useState(null);
-  const [cargos] = useState([
-    { label: 'Administrador', value: 'Administrador' },
-    { label: 'Perito', value: 'Perito' },
-    { label: 'Assistente', value: 'Assistente' },
+export default function CadastroUsuario({ navigation, route }) {
+  /* ---------------- estado ---------------- */
+  const [userId, setUserId]     = useState(null);
+  const [openRole, setOpenRole] = useState(false);
+  const [role, setRole]         = useState(null);
+  const [roles]                 = useState([
+    { label: 'Administrador', value: 'admin' },
+    { label: 'Perito',        value: 'perito' },
+    { label: 'Assistente',    value: 'assistente' },
   ]);
 
-  const handleCadastro = async () => {
-    if (!nome || !email || !senha || !confirmarSenha || !cargo) {
-      Alert.alert('Erro', 'Preencha todos os campos.');
-      return;
+  const [nome, setNome]           = useState('');
+  const [email, setEmail]         = useState('');
+  const [senha, setSenha]         = useState('');
+  const [confSenha, setConfSenha] = useState('');
+  const [showSenha, setShowSenha] = useState(false);
+  const [showConf,  setShowConf]  = useState(false);
+  const [loading,   setLoading]   = useState(false);
+
+  /* carrega dados de edição, se houver */
+  useEffect(() => {
+    if (route.params?.user) {
+      const u = route.params.user;
+      setUserId(u.id || u._id);
+      setNome(u.nome || '');
+      setEmail(u.email || '');
+      setRole(u.role || null);
     }
-    if (senha !== confirmarSenha) {
-      Alert.alert('Erro', 'As senhas não coincidem.');
-      return;
+  }, [route.params]);
+
+  /* ---------------- handler ---------------- */
+  const handleCadastro = useCallback(async () => {
+    Keyboard.dismiss();
+
+    // Validações básicas
+    if (!nome || !email || !role) {
+      return Alert.alert('Erro', 'Preencha todos os campos obrigatórios.');
     }
+    if (!userId) {
+      // novo usuário: senha obrigatória e confirmação
+      if (!senha || !confSenha) {
+        return Alert.alert('Erro', 'Preencha a senha e a confirmação.');
+      }
+      if (senha.length < 6) {
+        return Alert.alert('Erro', 'Senha deve ter pelo menos 6 caracteres.');
+      }
+      if (senha !== confSenha) {
+        return Alert.alert('Erro', 'As senhas não coincidem.');
+      }
+    } else if (senha && senha.length < 6) {
+      return Alert.alert('Erro', 'Senha deve ter pelo menos 6 caracteres.');
+    }
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      return Alert.alert('Erro', 'Email inválido.');
+    }
+
+    setLoading(true);
 
     try {
-      const response = await fetch('https://dentcase-backend.onrender.com/api/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          nome,
-          email,
-          senha,
-          cargo,
-        }),
+      const payload = { nome, email, role };
+      if (senha) payload.senha = senha;
+
+      const endpoint = userId ? `/users/${userId}` : '/auth/register';
+      const method   = userId ? 'put' : 'post';
+      const token    = await AsyncStorage.getItem('accessToken');
+      const headers  = { 'Content-Type': 'application/json' };
+      if (userId && token) headers.Authorization = `Bearer ${token}`;
+
+      const resposta = await axios({
+        url: apiBase + endpoint,
+        method,
+        data: payload,
+        headers,
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        Alert.alert('Sucesso', 'Usuário cadastrado com sucesso!');
-        setNome('');
-        setEmail('');
-        setSenha('');
-        setConfirmarSenha('');
-        setCargo(null);
-      } else {
-        Alert.alert('Erro', data.message || 'Erro ao cadastrar usuário.');
-      }
+      // sucesso
+      Alert.alert(
+        'Sucesso',
+        userId ? 'Usuário atualizado!' : 'Cadastro realizado com sucesso!',
+        [
+          {
+            text: 'OK',
+            onPress: () =>
+              navigation.navigate(userId ? 'Usuarios' : 'Main'),
+          },
+        ]
+      );
     } catch (error) {
-      Alert.alert('Erro', 'Erro de conexão com o servidor.');
-      console.error('Erro no cadastro:', error);
+      console.error('Erro no cadastro:', error.response?.data || error.message);
+      let msg = 'Erro ao processar requisição.';
+      if (error.response?.status === 409) msg = 'E‑mail já está em uso.';
+      else if (error.response?.data?.message) msg = error.response.data.message;
+      Alert.alert('Erro', msg);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [nome, email, senha, confSenha, role, userId, navigation]);
 
+  /* ---------------- UI ---------------- */
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Cadastro de Usuário</Text>
+      <Text style={styles.title}>{userId ? 'Editar Usuário' : 'Cadastro de Usuário'}</Text>
 
-      <DropDownPicker
-        open={openCargo}
-        value={cargo}
-        items={cargos}
-        setOpen={setOpenCargo}
-        setValue={setCargo}
-        setItems={() => {}}
-        placeholder="Selecione o cargo"
-        containerStyle={{ marginBottom: openCargo ? 180 : 16, zIndex: 1000 }}
-      />
+      <View style={{ zIndex: 3000, marginBottom: 12 }}>
+        <DropDownPicker
+          open={openRole}
+          value={role}
+          items={roles}
+          setOpen={setOpenRole}
+          setValue={setRole}
+          placeholder="Selecione o cargo*"
+          style={styles.dropdown}
+          dropDownContainerStyle={styles.dropdownContainer}
+        />
+      </View>
 
       <TextInput
-        placeholder="Nome completo"
+        placeholder="Nome completo*"
         style={styles.input}
         value={nome}
         onChangeText={setNome}
+        autoCapitalize="words"
       />
-
       <TextInput
-        placeholder="E-mail"
+        placeholder="Email*"
         style={styles.input}
         value={email}
         onChangeText={setEmail}
@@ -92,93 +148,69 @@ export default function CadastrarUsuario() {
         autoCapitalize="none"
       />
 
-      <View style={styles.passwordContainer}>
+      {/* senha */}
+      <View style={styles.pwdContainer}>
         <TextInput
-          placeholder="Senha"
-          style={[styles.input, { flex: 1 }]}
+          placeholder={userId ? 'Senha (deixe em branco para não alterar)' : 'Senha* (mínimo 6 caracteres)'}
+          style={[styles.input, { flex: 1, marginBottom: 0 }]}
+          secureTextEntry={!showSenha}
           value={senha}
           onChangeText={setSenha}
-          secureTextEntry={!mostrarSenha}
         />
-        <TouchableOpacity
-          onPress={() => setMostrarSenha(!mostrarSenha)}
-          style={styles.iconButton}
-        >
-          <Ionicons
-            name={mostrarSenha ? 'eye' : 'eye-off'}
-            size={24}
-            color="#6B0D0D"
-          />
+        <TouchableOpacity onPress={() => setShowSenha(v => !v)} style={styles.eyeBtn}>
+          <Ionicons name={showSenha ? 'eye-off' : 'eye'} size={24} color="#333" />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.passwordContainer}>
-        <TextInput
-          placeholder="Confirmar senha"
-          style={[styles.input, { flex: 1 }]}
-          value={confirmarSenha}
-          onChangeText={setConfirmarSenha}
-          secureTextEntry={!mostrarConfirmarSenha}
-        />
-        <TouchableOpacity
-          onPress={() => setMostrarConfirmarSenha(!mostrarConfirmarSenha)}
-          style={styles.iconButton}
-        >
-          <Ionicons
-            name={mostrarConfirmarSenha ? 'eye' : 'eye-off'}
-            size={24}
-            color="#6B0D0D"
+      {/* confirmar senha */}
+      {!userId && (
+        <View style={styles.pwdContainer}>
+          <TextInput
+            placeholder="Confirmar senha*"
+            style={[styles.input, { flex: 1, marginBottom: 0 }]}
+            secureTextEntry={!showConf}
+            value={confSenha}
+            onChangeText={setConfSenha}
           />
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity onPress={() => setShowConf(v => !v)} style={styles.eyeBtn}>
+            <Ionicons name={showConf ? 'eye-off' : 'eye'} size={24} color="#333" />
+          </TouchableOpacity>
+        </View>
+      )}
 
-      <TouchableOpacity style={styles.button} onPress={handleCadastro}>
-        <Text style={styles.buttonText}>Cadastrar Usuário</Text>
+      <TouchableOpacity
+        style={[styles.button, loading && { opacity: 0.7 }]}
+        onPress={handleCadastro}
+        disabled={loading}
+      >
+        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{userId ? 'Atualizar' : 'Cadastrar'}</Text>}
       </TouchableOpacity>
     </View>
   );
 }
 
+/* ---------------- estilos ---------------- */
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: 24,
-  },
+  container: { flex: 1, backgroundColor: '#fff', padding: 24, paddingTop: 40 },
   title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#6B0D0D',
-    marginBottom: 20,
-    textAlign: 'center',
+    fontSize: 22, fontWeight: 'bold', color: '#6B0D0D',
+    marginBottom: 20, textAlign: 'center',
   },
+  dropdown:       { borderColor: '#ccc', borderWidth: 1, borderRadius: 8 },
+  dropdownContainer:{ borderColor: '#ccc', borderWidth: 1, borderRadius: 8 },
   input: {
-    height: 48,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    marginBottom: 16,
-    backgroundColor: '#fff',
+    height: 50, borderColor: '#ccc', borderWidth: 1, borderRadius: 8,
+    paddingHorizontal: 15, marginBottom: 16, backgroundColor: '#fff',
   },
-  passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
+  pwdContainer: {
+    flexDirection: 'row', alignItems: 'center',
+    marginBottom: 16, borderColor: '#ccc', borderWidth: 1, borderRadius: 8,
+    paddingRight: 15,
   },
-  iconButton: {
-    paddingHorizontal: 8,
-  },
+  eyeBtn: { padding: 10 },
   button: {
-    backgroundColor: '#6B0D0D',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 12,
+    backgroundColor: '#6B0D0D', paddingVertical: 15, borderRadius: 8,
+    alignItems: 'center', marginTop: 20,
   },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
+  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
 });

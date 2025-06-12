@@ -1,43 +1,99 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Pressable, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
-
-import GerarRelatorioPdf from '../components/GerarRelatorioPdf';
-import GerarLaudoPdf from '../components/GerarLaudoPdf';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../services/api';
-
+import GerarRelatorioPdf from '../components/GerarRelatorioPdf';
 
 export default function DetalhesCasoScreen({ route, navigation }) {
-  const { caso = {} } = route.params || {};
-
-  const [status, setStatus] = useState(caso.status || 'Em Andamento');
-  const [modalVisible, setModalVisible] = useState(false);
+  const { caso } = route.params;
+  const [detalhe, setDetalhe] = useState(null);
   const [evidencias, setEvidencias] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const carregarEvidencias = async () => {
+    const carregarTudo = async () => {
+      setLoading(true);
       try {
-        // const response = await api.get(`/evidencias?casoId=${caso.id}`);
-        // setEvidencias(response.data);
-        console.log('Carregando evidências do caso:', caso.id);
-      } catch (error) {
-        console.error('Erro ao carregar evidências:', error);
+        const token = await AsyncStorage.getItem('accessToken');
+        if (!token) throw { response: { status: 401 } };
+
+        // 1. Buscar dados do caso usando _id
+        const caseRes = await api.get(`/cases/${caso._id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        // 2. Corrigir estrutura de dados
+        const casoFormatado = {
+          ...caseRes.data,
+          patientDOB: caseRes.data.patientDOB || null,
+          incidentDate: caseRes.data.incidentDate || null,
+          injuryRegions: caseRes.data.injuryRegions || [],
+          estado: caseRes.data.estado || '',
+          bairro: caseRes.data.bairro || '',
+          caseType: caseRes.data.caseType || '',
+          identified: caseRes.data.identified || false,
+        };
+        
+        setDetalhe(casoFormatado);
+
+        // 3. Buscar evidências usando _id do caso (não caseId)
+        const evRes = await api.get(`/evidences/case/${casoFormatado._id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        // 4. Formatar dados das evidências
+        const evidenciasFormatadas = evRes.data.map(ev => ({
+          ...ev,
+          collectionDate: ev.collectionDate || new Date().toISOString(),
+          collectionTime: ev.collectionTime || '00:00',
+        }));
+        
+        setEvidencias(evidenciasFormatadas);
+      } catch (err) {
+        console.error('Erro ao carregar detalhes:', err.response?.data || err.message);
+        if (err.response?.status === 401) {
+          Alert.alert(
+            'Sessão expirada',
+            'Faça login novamente.',
+            [{ text: 'OK', onPress: () => navigation.reset({ index: 0, routes: [{ name: 'Login' }] }) }]
+          );
+        } else {
+          Alert.alert('Erro', 'Não foi possível carregar os detalhes do caso.');
+        }
+      } finally {
+        setLoading(false);
       }
     };
 
-    if (caso.id) {
-      carregarEvidencias();
-    }
-  }, [caso.id]);
+    carregarTudo();
+  }, [caso._id]);
 
-  const mostrarCampo = (campo) => {
-    return campo ? campo : 'Não informado';
+  // Função auxiliar para mostrar valores
+  const mostrar = (v) => {
+    if (v == null || v === '') return 'Não informado';
+    if (Array.isArray(v)) return v.length ? v.join(', ') : 'Não informado';
+    if (typeof v === 'boolean') return v ? 'Sim' : 'Não';
+    return String(v);
+  };
+
+  // Mapeamento de estados (código para nome)
+  const estadosMap = {
+    /* ... */
   };
 
   const excluirCaso = () => {
     Alert.alert(
-      'Confirmar Exclusão',
-      'Tem certeza que deseja excluir este caso e todas as evidências relacionadas?',
+      'Excluir caso',
+      'Deseja mesmo excluir este caso e todas as evidências?',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -45,13 +101,13 @@ export default function DetalhesCasoScreen({ route, navigation }) {
           style: 'destructive',
           onPress: async () => {
             try {
-              // await api.delete(`/casos/${caso.id}`);
-              // await api.delete(`/evidencias?casoId=${caso.id}`);
-              console.log('Caso excluído:', caso.id);
-              setEvidencias([]);
+              const token = await AsyncStorage.getItem('accessToken');
+              await api.delete(`/cases/${caso._id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
               navigation.goBack();
-            } catch (error) {
-              console.error('Erro ao excluir caso:', error);
+            } catch (e) {
+              console.error(e);
               Alert.alert('Erro', 'Não foi possível excluir o caso.');
             }
           },
@@ -60,319 +116,359 @@ export default function DetalhesCasoScreen({ route, navigation }) {
     );
   };
 
-  const alterarStatus = async (novoStatus) => {
-    try {
-      setStatus(novoStatus);
-      setModalVisible(false);
-      // await api.patch(`/casos/${caso.id}`, { status: novoStatus });
-      console.log(`Status alterado para: ${novoStatus}`);
-    } catch (error) {
-      console.error('Erro ao alterar status:', error);
-      Alert.alert('Erro', 'Não foi possível alterar o status.');
-    }
+  const excluirEvidencia = (id) => {
+    Alert.alert(
+      'Excluir evidência',
+      'Deseja excluir esta evidência?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem('accessToken');
+              await api.delete(`/evidences/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+              setEvidencias((prev) => prev.filter((e) => e._id !== id));
+            } catch (e) {
+              console.error(e);
+              Alert.alert('Erro', 'Não foi possível excluir a evidência.');
+            }
+          },
+        },
+      ]
+    );
   };
 
-  const excluirEvidencia = async (id) => {
-    try {
-      // await api.delete(`/evidencias/${id}`);
-      setEvidencias((prev) => prev.filter((e) => e.id !== id));
-    } catch (error) {
-      console.error('Erro ao excluir evidência:', error);
-      Alert.alert('Erro', 'Não foi possível excluir a evidência.');
-    }
-  };
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#6B0D0D" />
+        <Text style={styles.loadingText}>Carregando...</Text>
+      </View>
+    );
+  }
+
+  if (!detalhe) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>Caso não encontrado.</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
+      {/* === DETALHES DO CASO === */}
       <View style={styles.card}>
-        <Text style={styles.caseTitle}>{mostrarCampo(caso.titulo)}</Text>
-
+        <Text style={styles.caseTitle}>{mostrar(detalhe.patientName)}</Text>
         <View style={styles.badges}>
-          <Text style={styles.caseId}>{caso.id ? `#${caso.id}` : '#caso-001'}</Text>
-          <Text style={styles.status}>{status}</Text>
+          <Text style={styles.caseId}>#{detalhe.caseId || detalhe._id}</Text>
+          <Text style={[styles.statusBadge, 
+            detalhe.status === 'em andamento' ? styles.statusAndamento :
+            detalhe.status === 'finalizado' ? styles.statusFinalizado :
+            styles.statusArquivado
+          ]}>
+            {detalhe.status === 'em andamento'
+              ? 'Em Andamento'
+              : detalhe.status === 'finalizado'
+              ? 'Finalizado'
+              : 'Arquivado'}
+          </Text>
         </View>
+        
+        <Text style={styles.description}>
+          <Text style={styles.label}>Descrição: </Text>{mostrar(detalhe.description)}
+        </Text>
+        <Text style={styles.description}>
+          <Text style={styles.label}>Data Criação: </Text>
+          {detalhe.createdAt ? new Date(detalhe.createdAt).toLocaleDateString('pt-BR') : 'Não informado'}
+        </Text>
+        <Text style={styles.description}>
+          <Text style={styles.label}>Responsável: </Text>
+          {detalhe.createdBy?.name || 'Não informado'}
+        </Text>
 
-        <Text style={styles.description}><Text style={styles.label}>Descrição: </Text>{mostrarCampo(caso.descricao)}</Text>
-        <Text style={styles.description}><Text style={styles.label}>Perito: </Text>{mostrarCampo(caso.perito)}</Text>
-        <Text style={styles.description}><Text style={styles.label}>Data Abertura: </Text>{mostrarCampo(caso.data)}</Text>
+        <Text style={styles.description}>
+          <Text style={styles.label}>Paciente: </Text>{mostrar(detalhe.patientName)}
+        </Text>
+        <Text style={styles.description}>
+          <Text style={styles.label}>Data Nasc.: </Text>
+          {detalhe.patientDOB ? new Date(detalhe.patientDOB).toLocaleDateString('pt-BR') : 'Não informado'}
+        </Text>
+        <Text style={styles.description}>
+          <Text style={styles.label}>Gênero: </Text>{mostrar(detalhe.patientGender)}
+        </Text>
+        <Text style={styles.description}>
+          <Text style={styles.label}>Documento: </Text>{mostrar(detalhe.patientID)}
+        </Text>
+        <Text style={styles.description}>
+          <Text style={styles.label}>Contato: </Text>{mostrar(detalhe.patientContact)}
+        </Text>
+
+        <Text style={styles.description}>
+          <Text style={styles.label}>Incidente: </Text>{mostrar(detalhe.incidentDescription)}
+        </Text>
+        <Text style={styles.description}>
+          <Text style={styles.label}>Data: </Text>
+          {detalhe.incidentDate ? new Date(detalhe.incidentDate).toLocaleString('pt-BR') : 'Não informado'}
+        </Text>
+        <Text style={styles.description}>
+          <Text style={styles.label}>Local: </Text>{mostrar(detalhe.incidentLocation)}
+        </Text>
+        <Text style={styles.description}>
+          <Text style={styles.label}>Instrumento/Arma: </Text>{mostrar(detalhe.incidentWeapon)}
+        </Text>
+        
+        <Text style={styles.description}>
+          <Text style={styles.label}>Estado: </Text>
+          {estadosMap[detalhe.estado] || 'Não informado'}
+        </Text>
+        <Text style={styles.description}>
+          <Text style={styles.label}>Bairro: </Text>{mostrar(detalhe.bairro)}
+        </Text>
+        <Text style={styles.description}>
+          <Text style={styles.label}>Tipo de Caso: </Text>{mostrar(detalhe.caseType)}
+        </Text>
+        <Text style={styles.description}>
+          <Text style={styles.label}>Identificado: </Text>{mostrar(detalhe.identified)}
+        </Text>
+        <Text style={styles.description}>
+          <Text style={styles.label}>Regiões de Lesão: </Text>{mostrar(detalhe.injuryRegions)}
+        </Text>
 
         <View style={styles.buttonRow}>
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity 
+            style={styles.button} 
+            onPress={() => navigation.navigate('EditarCaso', { caso: detalhe })}
+          >
             <Ionicons name="create-outline" size={16} color="#fff" />
             <Text style={styles.buttonText}>Editar</Text>
           </TouchableOpacity>
-
+          
           <TouchableOpacity style={styles.button} onPress={excluirCaso}>
             <Ionicons name="trash-outline" size={16} color="#fff" />
             <Text style={styles.buttonText}>Excluir</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
-            <Ionicons name="swap-horizontal-outline" size={16} color="#fff" />
-            <Text style={styles.buttonText}>Alterar Status</Text>
-          </TouchableOpacity>
-
-          <GerarRelatorioPdf caso={caso} status={status} />
+          <GerarRelatorioPdf caso={detalhe} status={detalhe.status} />
         </View>
       </View>
 
-      <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
-        <View style={styles.modalBackground}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Escolha o novo status</Text>
-            {['Em Andamento', 'Finalizado', 'Arquivado'].map((option) => (
-              <Pressable
-                key={option}
-                style={[styles.statusOption, status === option && styles.selectedOption]}
-                onPress={() => alterarStatus(option)}
-              >
-                <Text style={[styles.statusOptionText, status === option && styles.selectedOptionText]}>
-                  {option}
-                </Text>
-              </Pressable>
-            ))}
-            <TouchableOpacity
-              style={[styles.button, { alignSelf: 'flex-end', marginTop: 10 }]}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={styles.buttonText}>Cancelar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
+      {/* === EVIDÊNCIAS === */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Evidências</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Evidências</Text>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => navigation.navigate('CadastroEvidencia', { caseId: detalhe._id })}
+          >
+            <Ionicons name="add" size={18} color="#fff" />
+            <Text style={styles.addButtonText}>Adicionar</Text>
+          </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => navigation.navigate('CadastroEvidencia', { casoId: caso.id })}
-        >
-          <Ionicons name="add" size={18} color="#fff" />
-          <Text style={styles.addButtonText}>Adicionar</Text>
-        </TouchableOpacity>
-
-        {evidencias.map((evidencia) => (
-          <View key={evidencia.id} style={styles.evidenceCard}>
-            <Text style={styles.evidenceTitle}>
-              <Text style={styles.evidenceId}>#{evidencia.id}</Text> {evidencia.titulo}
-            </Text>
-
-            <View style={styles.evidenceInfoRow}>
-              <MaterialIcons name="date-range" size={16} color="#555" />
-              <Text style={styles.evidenceInfoText}>{evidencia.data}</Text>
-              <FontAwesome5 name="image" size={14} color="#555" style={{ marginLeft: 12 }} />
-              <Text style={styles.evidenceInfoText}>{evidencia.tipo}</Text>
-            </View>
-
-            <View style={styles.buttonRowEvidence}>
-              <TouchableOpacity
-                style={[styles.button, { backgroundColor: '#6B0D0D', flex: 1 }]}
-                onPress={() => navigation.navigate('CadastroEvidencia', { evidencia, editar: true })}
-              >
-                <Ionicons name="create-outline" size={16} color="#fff" />
-                <Text style={styles.buttonText}>Editar</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.button, { backgroundColor: '#B00020', flex: 1 }]}
-                onPress={() =>
-                  Alert.alert('Excluir Evidência', 'Tem certeza que deseja excluir esta evidência?', [
-                    { text: 'Cancelar', style: 'cancel' },
-                    { text: 'Excluir', style: 'destructive', onPress: () => excluirEvidencia(evidencia.id) },
-                  ])
-                }
-              >
-                <Ionicons name="trash-outline" size={16} color="#fff" />
-                <Text style={styles.buttonText}>Excluir</Text>
-              </TouchableOpacity>
-
-              <View style={{ flex: 1 }}>
-                <GerarLaudoPdf evidencia={evidencia} />
+        {evidencias.length === 0 ? (
+          <Text style={styles.emptyText}>Nenhuma evidência cadastrada</Text>
+        ) : (
+          evidencias.map((e) => (
+            <View key={e._id} style={styles.evidenceCard}>
+              <Text style={styles.evidenceTitle}>
+                {e.description || 'Evidência sem descrição'}
+              </Text>
+              
+              <View style={styles.evidenceInfoRow}>
+                <MaterialIcons name="date-range" size={16} color="#555" />
+                <Text style={styles.evidenceInfoText}>
+                  {e.collectionDate ? new Date(e.collectionDate).toLocaleDateString('pt-BR') : 'Data não informada'}
+                  {e.collectionTime ? ` - ${e.collectionTime}` : ''}
+                </Text>
+              </View>
+              
+              {e.latitude && e.longitude && (
+                <View style={styles.evidenceInfoRow}>
+                  <MaterialIcons name="place" size={16} color="#555" />
+                  <Text style={styles.evidenceInfoText}>
+                    {parseFloat(e.latitude).toFixed(6)}, {parseFloat(e.longitude).toFixed(6)}
+                  </Text>
+                </View>
+              )}
+              
+              <Text style={styles.evidenceAddedBy}>
+                Adicionada por: {e.addedBy?.name || 'Não informado'}
+              </Text>
+              
+              <View style={styles.buttonRowEvidence}>                
+                <TouchableOpacity
+                  style={[styles.button, styles.deleteButton]}
+                  onPress={() => excluirEvidencia(e._id)}
+                >
+                  <Ionicons name="trash-outline" size={16} color="#fff" />
+                  <Text style={styles.buttonText}>Excluir</Text>
+                </TouchableOpacity>
               </View>
             </View>
-          </View>
-        ))}
+          ))
+        )}
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#f3f3f3',
-    padding: 16,
-    flex: 1,
+  container: { 
+    backgroundColor: '#f3f3f3', 
+    flex: 1, 
+    padding: 16 
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 10,
+  loadingContainer: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
   },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 16,
-    marginBottom: 24,
-    elevation: 3,
+  loadingText: { 
+    color: '#666', 
+    fontSize: 16, 
+    textAlign: 'center', 
+    marginVertical: 8 
   },
-  caseTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#6B0D0D',
-    marginBottom: 8,
+  card: { 
+    backgroundColor: '#fff', 
+    borderRadius: 10, 
+    padding: 16, 
+    marginBottom: 24, 
+    elevation: 3 
   },
-  badges: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
+  caseTitle: { 
+    fontSize: 20, 
+    fontWeight: 'bold', 
+    color: '#6B0D0D', 
+    marginBottom: 8 
   },
-  caseId: {
-    backgroundColor: '#F3E8E8',
-    color: '#6B0D0D',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+  badges: { 
+    flexDirection: 'row', 
+    gap: 8, 
+    marginBottom: 12 
+  },
+  caseId: { 
+    backgroundColor: '#F3E8E8', 
+    color: '#6B0D0D', 
+    padding: 4, 
+    borderRadius: 5, 
+    fontSize: 12 
+  },
+  statusBadge: {
+    padding: 4,
     borderRadius: 5,
-    fontWeight: 'bold',
     fontSize: 12,
+    fontWeight: 'bold',
   },
-  status: {
+  statusAndamento: {
     backgroundColor: '#E7D6B3',
-    color: '#6B0D0D',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 5,
-    fontSize: 12,
+    color: '#856404',
   },
-  description: {
-    color: '#444',
-    marginBottom: 4,
-    lineHeight: 20,
+  statusFinalizado: {
+    backgroundColor: '#D4EDDA',
+    color: '#155724',
   },
-  label: {
-    fontWeight: 'bold',
+  statusArquivado: {
+    backgroundColor: '#E2E3E5',
+    color: '#6C757D',
   },
-  buttonRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginTop: 16,
+  description: { 
+    color: '#444', 
+    marginBottom: 8, 
+    lineHeight: 20 
   },
-  button: {
-    backgroundColor: '#6B0D0D',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
+  label: { 
+    fontWeight: 'bold' 
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 14,
-  },
-  addButton: {
-    backgroundColor: '#6B0D0D',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    alignSelf: 'flex-end',
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 6,
-    marginBottom: 10,
-  },
-  addButtonText: {
-    color: '#fff',
-    marginLeft: 6,
-    fontSize: 14,
-  },
-  evidenceCard: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 16,
-    elevation: 2,
-    marginBottom: 20,
-  },
-  evidenceTitle: {
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#333',
-  },
-  evidenceId: {
-    backgroundColor: '#F3E8E8',
-    color: '#6B0D0D',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    fontSize: 12,
-    marginRight: 6,
-  },
-  evidenceInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  evidenceInfoText: {
-    marginLeft: 4,
-    marginRight: 10,
-    color: '#555',
-    fontSize: 14,
-  },
-  reportButton: {
-    alignSelf: 'flex-end',
-    backgroundColor: '#B77A7A',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 5,
-  },
-  reportButtonText: {
-    color: '#fff',
-    fontSize: 12,
-  },
-  modalBackground: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContainer: {
-    width: '80%',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 20,
-    elevation: 5,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    color: '#6B0D0D',
-  },
-  statusOption: {
-    paddingVertical: 10,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#6B0D0D',
-    marginBottom: 10,
-    alignItems: 'center',
-  },
-  statusOptionText: {
-    color: '#6B0D0D',
-    fontSize: 16,
-  },
-  selectedOption: {
-    backgroundColor: '#6B0D0D',
-  },
-  selectedOptionText: {
-    color: '#fff',
+  buttonRow: { 
+    flexDirection: 'row', 
+    gap: 12, 
+    marginTop: 16 
   },
   buttonRowEvidence: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 10,
-    gap: 10, // Se não funcionar, use marginRight/marginLeft nos botões
+    marginTop: 12,
+    gap: 10
   },
-
+  button: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: 8, 
+    borderRadius: 6,
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: '#6B0D0D', // Adicionado para garantir visibilidade dos botões
+  },
+  editButton: {
+    backgroundColor: '#6B0D0D',
+  },
+  deleteButton: {
+    backgroundColor: '#B00020',
+  },
+  buttonText: { 
+    color: '#fff', 
+    marginLeft: 6 
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  sectionTitle: { 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    color: '#333' 
+  },
+  addButton: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#6B0D0D', 
+    padding: 10, 
+    borderRadius: 6 
+  },
+  addButtonText: {
+    color: '#fff',
+    marginLeft: 6
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#666',
+    fontStyle: 'italic',
+    marginTop: 8
+  },
+  evidenceCard: {
+    backgroundColor: '#fefefe',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    elevation: 1
+  },
+  evidenceTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 6
+  },
+  evidenceInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4
+  },
+  evidenceInfoText: {
+    color: '#555',
+    fontSize: 14
+  },
+  evidenceAddedBy: {
+    color: '#777',
+    fontStyle: 'italic',
+    marginTop: 4
+  },
 });
