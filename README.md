@@ -1,9 +1,5 @@
 # 🦷 DentCase Frontend APP – Sistema de Gerenciamento Odonto-Legal
 
-![GitHub stars](https://img.shields.io/github/stars/Nyckjeni/app-react-pericia?style=social)
-![GitHub issues](https://img.shields.io/github/issues/Nyckjeni/app-react-pericia)
-![GitHub license](https://img.shields.io/github/license/Nyckjeni/app-react-pericia)
-
 > Aplicativo mobile em **React Native + Expo**, desenvolvido para gerenciamento de **casos e evidências em perícias odontolegais**, com recursos modernos como **upload de arquivos**, **geolocalização GPS**, **dashboard dinâmico** e **login com níveis de acesso**.
 
 ---
